@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentation — Polymarket RBI Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-0: #eef1f5;
+  --bg-1: #f5f7fa;
+  --bg-2: #ffffff;
+  --border: #d0d7e0;
+  --border-bright: #b8c2cf;
+  --text-0: #1a2332;
+  --text-1: #4a5568;
+  --text-2: #8694a7;
+  --green: #0d9f4f;
+  --red: #d32f2f;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --cyan: #0891b2;
+  --amber: #d97706;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Instrument Sans', -apple-system, sans-serif;
+}
+
+html { font-size: 15px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-0);
+  color: var(--text-0);
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+/* NAV */
+.topnav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(12px);
+}
+
+.topnav-left { display: flex; align-items: center; gap: 12px; }
+
+.topnav-logo {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: white;
+}
+
+.topnav-title {
+  font-weight: 700; font-size: 15px; color: var(--text-0);
+}
+
+.topnav-links { display: flex; gap: 8px; }
+.topnav-links a {
+  padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  text-decoration: none; color: var(--text-1); font-weight: 500;
+  transition: all 0.2s;
+}
+.topnav-links a:hover { background: var(--bg-0); color: var(--text-0); }
+.topnav-links a.primary {
+  background: var(--blue); color: white;
+}
+.topnav-links a.primary:hover { opacity: 0.9; }
+
+/* LAYOUT */
+.page { display: flex; max-width: 1200px; margin: 0 auto; }
+
+.sidebar {
+  width: 240px; flex-shrink: 0; padding: 24px 0 24px 32px;
+  position: sticky; top: 60px; height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  margin-bottom: 20px;
+}
+
+.sidebar-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-2); margin-bottom: 8px;
+}
+
+.sidebar a {
+  display: block; padding: 5px 12px; font-size: 13px;
+  color: var(--text-1); text-decoration: none; border-radius: 4px;
+  transition: all 0.15s; border-left: 2px solid transparent;
+}
+.sidebar a:hover { color: var(--text-0); background: var(--bg-2); border-left-color: var(--blue); }
+
+.content {
+  flex: 1; padding: 32px 40px 80px 40px;
+  min-width: 0;
+}
+
+/* TYPOGRAPHY */
+h1 {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.5px;
+  margin-bottom: 8px; color: var(--text-0);
+}
+
+h2 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+  margin-top: 48px; margin-bottom: 16px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border); color: var(--text-0);
+}
+
+h3 {
+  font-size: 16px; font-weight: 600;
+  margin-top: 28px; margin-bottom: 10px; color: var(--text-0);
+}
+
+p { margin-bottom: 14px; color: var(--text-1); }
+
+.subtitle {
+  font-size: 17px; color: var(--text-2); margin-bottom: 32px;
+}
+
+/* CARDS */
+.info-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin: 20px 0;
+}
+
+.info-card {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; position: relative; overflow: hidden;
+}
+
+.info-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.info-card.green::before { background: var(--green); }
+.info-card.blue::before { background: var(--blue); }
+.info-card.purple::before { background: var(--purple); }
+
+.info-card h4 {
+  font-size: 14px; font-weight: 700; margin-bottom: 8px;
+  font-family: var(--font-mono);
+}
+.info-card.green h4 { color: var(--green); }
+.info-card.blue h4 { color: var(--blue); }
+.info-card.purple h4 { color: var(--purple); }
+
+.info-card p { font-size: 13px; margin-bottom: 0; }
+
+/* CODE */
+code {
+  font-family: var(--font-mono); font-size: 13px;
+  background: var(--bg-0); padding: 2px 6px; border-radius: 4px;
+  color: var(--purple);
+}
+
+pre {
+  background: #1a2332; color: #e2e8f0; border-radius: 8px;
+  padding: 18px 20px; margin: 14px 0 20px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+  border: 1px solid #2d3748;
+}
+
+pre .comment { color: #5a6a7e; }
+pre .keyword { color: #63b3ed; }
+pre .string { color: #68d391; }
+pre .flag { color: #fbd38d; }
+
+/* TABLE */
+.doc-table {
+  width: 100%; border-collapse: collapse; margin: 14px 0 20px;
+  font-size: 13px;
+}
+
+.doc-table th {
+  background: var(--bg-0); padding: 10px 14px; text-align: left;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-2); border-bottom: 1px solid var(--border);
+}
+
+.doc-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-1);
+}
+
+.doc-table tr:hover td { background: var(--bg-1); }
+
+/* BADGES */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono);
+}
+.badge.get { background: #dbeafe; color: #1d4ed8; }
+.badge.post { background: #dcfce7; color: #15803d; }
+.badge.put { background: #fef3c7; color: #92400e; }
+
+/* CALLOUT */
+.callout {
+  padding: 16px 20px; border-radius: 8px; margin: 16px 0;
+  font-size: 14px;
+}
+
+.callout.warning {
+  background: #fef3c7; border-left: 4px solid var(--amber); color: #92400e;
+}
+
+.callout.info {
+  background: #dbeafe; border-left: 4px solid var(--blue); color: #1e40af;
+}
+
+.callout.danger {
+  background: #fee2e2; border-left: 4px solid var(--red); color: #991b1b;
+}
+
+.callout strong { font-weight: 700; }
+
+/* FLOW DIAGRAM */
+.flow {
+  display: flex; align-items: center; gap: 0; margin: 24px 0;
+  flex-wrap: wrap; justify-content: center;
+}
+
+.flow-step {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 20px; text-align: center; min-width: 140px;
+}
+
+.flow-step .step-num {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-2); margin-bottom: 4px;
+}
+
+.flow-step .step-title {
+  font-weight: 700; font-size: 14px; color: var(--text-0);
+}
+
+.flow-step .step-desc {
+  font-size: 11px; color: var(--text-2); margin-top: 4px;
+}
+
+.flow-arrow {
+  font-size: 20px; color: var(--border-bright); padding: 0 8px;
+}
+
+/* STRUCTURE */
+.tree {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 24px; margin: 14px 0 20px; font-family: var(--font-mono);
+  font-size: 13px; line-height: 1.8; color: var(--text-1);
+}
+.tree .folder { color: var(--blue); font-weight: 600; }
+.tree .file { color: var(--text-1); }
+.tree .desc { color: var(--text-2); font-style: italic; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .content { padding: 20px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .flow { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="topnav-left">
+    <div class="topnav-logo">R</div>
+    <span class="topnav-title">Documentation</span>
+  </div>
+  <div class="topnav-links">
+    <a href="/">Dashboard</a>
+    <a href="/docs.html">Docs</a>
+    <a href="/docs" class="primary">API Swagger</a>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Demarrage</div>
+    <a href="#introduction">Introduction</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#installation">Installation</a>
+    <a href="#lancement">Lancement</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Strategies</div>
+    <a href="#macd">MACD (3/15/3)</a>
+    <a href="#rsi">RSI + VWAP</a>
+    <a href="#cvd">CVD Divergence</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Systeme</div>
+    <a href="#backtesting">Backtesting</a>
+    <a href="#risk">Risk Manager</a>
+    <a href="#incubation">Incubation</a>
+    <a href="#dashboard">Dashboard</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">API</div>
+    <a href="#api-endpoints">Endpoints</a>
+    <a href="#api-settings">Settings</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Securite</div>
+    <a href="#risques">Risques</a>
+    <a href="#avertissement">Avertissement</a>
+  </div>
+</aside>
+
+<!-- CONTENT -->
+<main class="content">
+
+<h1>Polymarket RBI Bot</h1>
+<p class="subtitle">Research &middot; Backtest &middot; Incubate — Documentation complete du systeme de trading automatise</p>
+
+<!-- ==================== INTRODUCTION ==================== -->
+<h2 id="introduction">Introduction</h2>
+
+<p>Le Polymarket RBI Bot est un systeme de trading automatise qui execute trois strategies independantes sur la plateforme <strong>Polymarket</strong> (marche de prediction basee sur Polygon).</p>
+
+<p>Le systeme suit la methodologie <strong>RBI</strong> :</p>
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="step-num">Etape 1</div>
+    <div class="step-title">Research</div>
+    <div class="step-desc">Trouver des idees<br>de strategies</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step">
+    <div class="step-num">Etape 2</div>
+    <div class="step-title">Backtest</div>
+    <div class="step-desc">Tester sur des<br>donnees historiques</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step">
+    <div class="step-num">Etape 3</div>
+    <div class="step-title">Incubate</div>
+    <div class="step-desc">Deployer avec<br>un risque minimal</div>
+  </div>
+</div>
+
+<p>Chaque bot fonctionne de maniere autonome avec son propre compte Polymarket, sa propre strategie et sa propre gestion de position.</p>
+
+<!-- ==================== ARCHITECTURE ==================== -->
+<h2 id="architecture">Architecture du projet</h2>
+
+<div class="tree">
+<span class="folder">polymarket-rbi-bot/</span><br>
+├── <span class="folder">api/</span> <span class="desc">— Serveur FastAPI + gestionnaire de bots</span><br>
+│&nbsp;&nbsp; ├── <span class="file">server.py</span> <span class="desc">— Routes API + serveur web</span><br>
+│&nbsp;&nbsp; └── <span class="file">bot_manager.py</span> <span class="desc">— Orchestrateur des bots en threads</span><br>
+├── <span class="folder">bot/</span> <span class="desc">— Logique d'execution des trades</span><br>
+│&nbsp;&nbsp; ├── <span class="file">trader.py</span> <span class="desc">— Boucle principale : signal → risk → execute</span><br>
+│&nbsp;&nbsp; ├── <span class="file">risk_manager.py</span> <span class="desc">— Limites de position et perte journaliere</span><br>
+│&nbsp;&nbsp; ├── <span class="file">order_manager.py</span> <span class="desc">— Gestion des limit orders</span><br>
+│&nbsp;&nbsp; └── <span class="file">position_tracker.py</span> <span class="desc">— Suivi positions + PnL</span><br>
+├── <span class="folder">strategies/</span> <span class="desc">— Les 3 strategies de trading</span><br>
+│&nbsp;&nbsp; ├── <span class="file">base_strategy.py</span> <span class="desc">— Classe abstraite (BUY/SELL/HOLD)</span><br>
+│&nbsp;&nbsp; ├── <span class="file">macd_strategy.py</span> <span class="desc">— MACD Histogram (3/15/3)</span><br>
+│&nbsp;&nbsp; ├── <span class="file">rsi_mean_reversion.py</span> <span class="desc">— RSI(14) + VWAP</span><br>
+│&nbsp;&nbsp; └── <span class="file">cvd_strategy.py</span> <span class="desc">— Cumulative Volume Delta</span><br>
+├── <span class="folder">backtesting/</span> <span class="desc">— Moteur de test historique</span><br>
+│&nbsp;&nbsp; ├── <span class="file">engine.py</span> <span class="desc">— Simulateur avec stop-loss/take-profit</span><br>
+│&nbsp;&nbsp; ├── <span class="file">metrics.py</span> <span class="desc">— Calcul win rate, Sharpe, drawdown</span><br>
+│&nbsp;&nbsp; └── <span class="file">runner.py</span> <span class="desc">— Execution parallele multi-strategies</span><br>
+├── <span class="folder">data/</span> <span class="desc">— Acces aux donnees et API Polymarket</span><br>
+│&nbsp;&nbsp; ├── <span class="file">downloader.py</span> <span class="desc">— Telechargement OHLCV via ccxt</span><br>
+│&nbsp;&nbsp; ├── <span class="file">polymarket_client.py</span> <span class="desc">— Client CLOB API</span><br>
+│&nbsp;&nbsp; └── <span class="file">storage.py</span> <span class="desc">— SQLite pour les trades + CSV</span><br>
+├── <span class="folder">incubation/</span> <span class="desc">— Monitoring et scaling progressif</span><br>
+│&nbsp;&nbsp; ├── <span class="file">monitor.py</span> <span class="desc">— Dashboard console</span><br>
+│&nbsp;&nbsp; ├── <span class="file">scaler.py</span> <span class="desc">— Scaling $1 → $5 → $10 → $50 → $100</span><br>
+│&nbsp;&nbsp; └── <span class="file">logger.py</span> <span class="desc">— Logs structures JSONL</span><br>
+├── <span class="folder">dashboard/</span> <span class="desc">— Interface web</span><br>
+│&nbsp;&nbsp; ├── <span class="file">index.html</span> <span class="desc">— Dashboard principal</span><br>
+│&nbsp;&nbsp; └── <span class="file">docs.html</span> <span class="desc">— Cette documentation</span><br>
+├── <span class="folder">deploy/</span> <span class="desc">— Scripts de lancement</span><br>
+├── <span class="folder">config/</span> <span class="desc">— Configuration et comptes</span><br>
+├── <span class="file">start.bat</span> <span class="desc">— Lanceur Windows (double-clic)</span><br>
+├── <span class="file">requirements.txt</span> <span class="desc">— Dependances Python</span><br>
+└── <span class="file">.env</span> <span class="desc">— Cles privees (ne jamais partager !)</span><br>
+</div>
+
+<!-- ==================== INSTALLATION ==================== -->
+<h2 id="installation">Installation</h2>
+
+<h3>Prerequis</h3>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li><strong>Python 3.10+</strong> installe et dans le PATH</li>
+  <li><strong>pip</strong> (inclus avec Python)</li>
+  <li>Un <strong>wallet Polygon</strong> avec des fonds pour trader en live</li>
+</ul>
+
+<h3>Installation automatique</h3>
+<p>Double-cliquer sur <code>start.bat</code> — il s'occupe de tout :</p>
+<pre><span class="comment"># Ce que fait start.bat automatiquement :</span>
+1. Verifie que Python est installe
+2. Cree un environnement virtuel (.venv)
+3. Installe toutes les dependances (requirements.txt)
+4. Copie .env.example → .env si manquant
+5. Lance le serveur sur http://localhost:1818
+6. Ouvre le dashboard dans le navigateur</pre>
+
+<h3>Installation manuelle</h3>
+<pre><span class="comment"># Creer et activer le venv</span>
+<span class="keyword">cd</span> <span class="string">"C:\DEV POWERSHELL\TRADING BOT"</span>
+python -m venv .venv
+.venv\Scripts\activate
+
+<span class="comment"># Installer les dependances</span>
+pip install -r requirements.txt
+
+<span class="comment"># Configurer l'environnement</span>
+copy .env.example .env
+<span class="comment"># Editer .env avec tes cles</span>
+
+<span class="comment"># Lancer</span>
+python api/server.py</pre>
+
+<h3>Configuration (.env)</h3>
+<table class="doc-table">
+  <thead><tr><th>Variable</th><th>Description</th><th>Defaut</th></tr></thead>
+  <tbody>
+    <tr><td><code>POLYMARKET_PRIVATE_KEY</code></td><td>Cle privee du wallet Polygon</td><td>—</td></tr>
+    <tr><td><code>POLYMARKET_FUNDER_ADDRESS</code></td><td>Adresse du wallet</td><td>—</td></tr>
+    <tr><td><code>MAX_POSITION_SIZE</code></td><td>Taille max par position ($)</td><td>10</td></tr>
+    <tr><td><code>MAX_DAILY_LOSS</code></td><td>Perte journaliere max ($)</td><td>50</td></tr>
+    <tr><td><code>MAX_OPEN_POSITIONS</code></td><td>Nombre max de positions ouvertes</td><td>3</td></tr>
+    <tr><td><code>DRY_RUN</code></td><td>Mode simulation (pas de vrais ordres)</td><td>true</td></tr>
+  </tbody>
+</table>
+
+<div class="callout danger">
+  <strong>Securite :</strong> Ne jamais partager le fichier <code>.env</code>. Il contient la cle privee de ton wallet. Un seul leak = wallet vide.
+</div>
+
+<!-- ==================== LANCEMENT ==================== -->
+<h2 id="lancement">Lancement</h2>
+
+<p>Il y a plusieurs facons de lancer le systeme :</p>
+
+<table class="doc-table">
+  <thead><tr><th>Methode</th><th>Commande</th><th>Usage</th></tr></thead>
+  <tbody>
+    <tr><td>Double-clic</td><td><code>start.bat</code></td><td>Le plus simple — tout automatique</td></tr>
+    <tr><td>Serveur API</td><td><code>python api/server.py</code></td><td>Dashboard web + API</td></tr>
+    <tr><td>Backtest seul</td><td><code>python deploy/run_backtest.py</code></td><td>Tester les strategies</td></tr>
+    <tr><td>Bot seul</td><td><code>python deploy/run_bot.py --strategy macd --token-id TOKEN</code></td><td>Un bot en ligne de commande</td></tr>
+    <tr><td>Monitoring</td><td><code>python deploy/run_monitor.py</code></td><td>Dashboard console</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== STRATEGIES ==================== -->
+<h2 id="macd">Strategie 1 : MACD (3/15/3)</h2>
+
+<div class="info-grid">
+  <div class="info-card green">
+    <h4>Type</h4>
+    <p>Momentum / Trend Following</p>
+  </div>
+  <div class="info-card green">
+    <h4>Signal d'entree</h4>
+    <p>Croisement de la ligne MACD au-dessus de la ligne signal</p>
+  </div>
+  <div class="info-card green">
+    <h4>Signal de sortie</h4>
+    <p>Croisement inverse ou stop-loss / take-profit</p>
+  </div>
+</div>
+
+<p>La strategie <strong>MACD</strong> (Moving Average Convergence Divergence) detecte les changements de momentum. Les parametres rapides (3/15/3) sont optimises pour les mouvements courts sur des fenetres de 5 minutes.</p>
+
+<h3>Comment ca marche</h3>
+<ol style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li>Calcul de la <strong>ligne MACD</strong> = EMA(3) - EMA(15) des prix de cloture</li>
+  <li>Calcul de la <strong>ligne signal</strong> = EMA(3) de la ligne MACD</li>
+  <li>L'<strong>histogramme</strong> = difference entre les deux lignes</li>
+  <li><strong>BUY</strong> quand la ligne MACD croise au-dessus du signal (bullish crossover)</li>
+  <li><strong>SELL</strong> quand la ligne MACD croise en dessous du signal (bearish crossover)</li>
+</ol>
+
+<div class="callout info">
+  <strong>Ideal pour :</strong> Les marches en tendance avec du volume. Fonctionne mal en range (marche lateral) — genere des faux signaux.
+</div>
+
+<!-- RSI -->
+<h2 id="rsi">Strategie 2 : RSI + VWAP</h2>
+
+<div class="info-grid">
+  <div class="info-card blue">
+    <h4>Type</h4>
+    <p>Mean Reversion / Counter-Trend</p>
+  </div>
+  <div class="info-card blue">
+    <h4>Signal d'entree</h4>
+    <p>RSI &lt; 30 (survendu) ET prix sous le VWAP</p>
+  </div>
+  <div class="info-card blue">
+    <h4>Signal de sortie</h4>
+    <p>RSI &gt; 50 et prix au VWAP, ou RSI &gt; 70</p>
+  </div>
+</div>
+
+<p>Cette strategie parie sur le <strong>retour a la moyenne</strong>. Quand tout le monde panique et vend (RSI tres bas), elle achete en anticipant un rebond vers la "juste valeur" (VWAP).</p>
+
+<h3>Indicateurs utilises</h3>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li><strong>RSI (14)</strong> — Relative Strength Index. Mesure si un actif est survendu (&lt;30) ou surachete (&gt;70)</li>
+  <li><strong>VWAP</strong> — Volume Weighted Average Price. Prix moyen pondere par le volume = "prix juste" du marche</li>
+</ul>
+
+<div class="callout info">
+  <strong>Ideal pour :</strong> Les pullbacks apres des mouvements violents. Quand le marche surreagit a une nouvelle.
+</div>
+
+<!-- CVD -->
+<h2 id="cvd">Strategie 3 : CVD Divergence</h2>
+
+<div class="info-grid">
+  <div class="info-card purple">
+    <h4>Type</h4>
+    <p>Volume Delta / Reversal Detection</p>
+  </div>
+  <div class="info-card purple">
+    <h4>Signal d'entree</h4>
+    <p>Divergence entre la direction du prix et le CVD</p>
+  </div>
+  <div class="info-card purple">
+    <h4>Signal de sortie</h4>
+    <p>Convergence prix/CVD ou stop-loss / take-profit</p>
+  </div>
+</div>
+
+<p>La strategie CVD analyse la <strong>pression d'achat vs de vente reelle</strong> cachee dans le volume. Quand le prix dit une chose mais que l'argent fait le contraire, elle suit l'argent.</p>
+
+<h3>Les deux signaux cles</h3>
+<table class="doc-table">
+  <thead><tr><th>Divergence</th><th>Prix</th><th>CVD</th><th>Signal</th><th>Interpretation</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Bullish</strong></td><td style="color:var(--red);">Baisse ↓</td><td style="color:var(--green);">Monte ↑</td><td style="color:var(--green);font-weight:700;">BUY</td><td>Achat cache — les gros achetent pendant que les petits paniquent</td></tr>
+    <tr><td><strong>Bearish</strong></td><td style="color:var(--green);">Monte ↑</td><td style="color:var(--red);">Baisse ↓</td><td style="color:var(--red);font-weight:700;">SELL</td><td>Vente cachee — les gros vendent pendant que les petits FOMO</td></tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <strong>Ideal pour :</strong> Detecter les retournements de tendance. Fonctionne bien quand il y a du volume et de la volatilite.
+</div>
+
+<!-- ==================== BACKTESTING ==================== -->
+<h2 id="backtesting">Backtesting</h2>
+
+<p>Le backtesting permet de <strong>tester une strategie sur des donnees historiques</strong> avant de risquer de l'argent reel.</p>
+
+<pre><span class="comment"># Lancer le backtest des 3 strategies</span>
+python deploy/run_backtest.py
+
+<span class="comment"># Ce que ca fait :</span>
+<span class="comment"># 1. Telecharge 30 jours de candles BTC/USDT (Binance)</span>
+<span class="comment"># 2. Execute chaque strategie sur les donnees</span>
+<span class="comment"># 3. Calcule les metriques de performance</span>
+<span class="comment"># 4. Affiche un classement</span></pre>
+
+<h3>Metriques calculees</h3>
+<table class="doc-table">
+  <thead><tr><th>Metrique</th><th>Description</th><th>Seuil minimum</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Win Rate</strong></td><td>Pourcentage de trades gagnants</td><td>&gt; 55%</td></tr>
+    <tr><td><strong>Profit Factor</strong></td><td>Gains bruts / Pertes brutes</td><td>&gt; 1.5</td></tr>
+    <tr><td><strong>Max Drawdown</strong></td><td>Pire perte depuis un sommet</td><td>&lt; 20%</td></tr>
+    <tr><td><strong>Sharpe Ratio</strong></td><td>Rendement ajuste au risque (annualise)</td><td>&gt; 1.0</td></tr>
+    <tr><td><strong>Nombre de trades</strong></td><td>Taille de l'echantillon</td><td>&gt; 100</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warning">
+  <strong>Attention :</strong> Un backtest n'est PAS une garantie. L'overfitting (optimiser pour le passe) est le piege #1. Un backtest parfait peut echouer en live a cause du slippage, des frais, et de la liquidite.
+</div>
+
+<!-- ==================== RISK MANAGER ==================== -->
+<h2 id="risk">Risk Manager</h2>
+
+<p>Le Risk Manager est la <strong>derniere ligne de defense</strong> avant chaque trade. Aucun ordre ne passe sans son approbation.</p>
+
+<h3>Regles appliquees</h3>
+<table class="doc-table">
+  <thead><tr><th>Regle</th><th>Condition de blocage</th><th>Configurable</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Taille max</strong></td><td>Position &gt; MAX_POSITION_SIZE</td><td>.env</td></tr>
+    <tr><td><strong>Positions max</strong></td><td>Positions ouvertes &gt;= MAX_OPEN_POSITIONS</td><td>.env</td></tr>
+    <tr><td><strong>Perte journaliere</strong></td><td>PnL du jour &lt;= -MAX_DAILY_LOSS</td><td>.env</td></tr>
+    <tr><td><strong>Stop-Loss</strong></td><td>Perte sur une position &gt; 5%</td><td>config/settings.py</td></tr>
+    <tr><td><strong>Take-Profit</strong></td><td>Gain sur une position &gt; 10%</td><td>config/settings.py</td></tr>
+  </tbody>
+</table>
+
+<p>Si la perte journaliere est atteinte, <strong>tous les bots s'arretent</strong> jusqu'au lendemain (reset a minuit UTC).</p>
+
+<!-- ==================== INCUBATION ==================== -->
+<h2 id="incubation">Incubation</h2>
+
+<p>L'incubation est la phase de <strong>deploiement progressif</strong>. On ne met jamais beaucoup d'argent d'un coup.</p>
+
+<h3>Echelle de scaling</h3>
+<div class="flow">
+  <div class="flow-step"><div class="step-title">$1</div><div class="step-desc">Niveau 1<br>Observation</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$5</div><div class="step-desc">Niveau 2<br>Validation</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$10</div><div class="step-desc">Niveau 3<br>Confiance</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$50</div><div class="step-desc">Niveau 4<br>Scale</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$100</div><div class="step-desc">Niveau 5<br>Production</div></div>
+</div>
+
+<p>Pour passer au niveau suivant, il faut :</p>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li>Minimum <strong>20 trades</strong> au niveau actuel</li>
+  <li>Win rate &gt; <strong>55%</strong></li>
+  <li>Profit factor &gt; <strong>1.3</strong></li>
+</ul>
+
+<!-- ==================== DASHBOARD ==================== -->
+<h2 id="dashboard">Dashboard</h2>
+
+<p>Le dashboard web (accessible sur <a href="/" style="color:var(--blue);">http://localhost:1818</a>) permet de :</p>
+
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li><strong>Demarrer / arreter</strong> chaque bot individuellement avec les toggles</li>
+  <li>Voir les <strong>metriques en temps reel</strong> : PnL, win rate, Sharpe ratio</li>
+  <li>Suivre l'<strong>equity curve</strong> (evolution du capital) de chaque strategie</li>
+  <li>Consulter le <strong>trade log</strong> avec les 50 derniers trades</li>
+  <li>Surveiller le <strong>Risk Manager</strong> : perte journaliere, positions ouvertes</li>
+  <li><strong>Kill All Bots</strong> en urgence (bouton rouge)</li>
+  <li>Modifier les <strong>settings</strong> : taille, stop-loss, take-profit, mode dry run</li>
+</ul>
+
+<p>Le dashboard interroge l'API toutes les <strong>3 secondes</strong> pour des donnees live.</p>
+
+<!-- ==================== API ==================== -->
+<h2 id="api-endpoints">API Endpoints</h2>
+
+<p>L'API REST est accessible sur <code>http://localhost:1818/api/</code>. Documentation interactive Swagger sur <a href="/docs" style="color:var(--blue);">/docs</a>.</p>
+
+<table class="doc-table">
+  <thead><tr><th>Methode</th><th>Endpoint</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/bots</code></td><td>Liste des 3 bots avec etat, PnL, win rate</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/{key}/start</code></td><td>Demarrer un bot (macd, rsi, cvd)</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/{key}/stop</code></td><td>Arreter un bot</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/kill-all</code></td><td>Arreter tous les bots</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/metrics</code></td><td>Metriques globales (PnL total, Sharpe...)</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/trades?limit=50</code></td><td>Derniers trades</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/risk</code></td><td>Etat du risk manager</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/settings</code></td><td>Settings actuels</td></tr>
+    <tr><td><span class="badge put">PUT</span></td><td><code>/api/settings</code></td><td>Modifier les settings</td></tr>
+  </tbody>
+</table>
+
+<h2 id="api-settings">Settings via API</h2>
+<pre><span class="comment"># Exemple : modifier la taille de position</span>
+curl -X PUT http://localhost:1818/api/settings \
+  -H "Content-Type: application/json" \
+  -d '{"position_size": 5.0, "dry_run": true}'</pre>
+
+<!-- ==================== RISQUES ==================== -->
+<h2 id="risques">Risques connus</h2>
+
+<table class="doc-table">
+  <thead><tr><th>Risque</th><th>Description</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Overfitting</strong></td><td>Strategie optimisee pour le passe, echec en live</td><td>Backtester sur differentes periodes, walk-forward analysis</td></tr>
+    <tr><td><strong>Slippage</strong></td><td>Prix reel different du prix prevu</td><td>Limit orders uniquement (0 frais sur Polymarket)</td></tr>
+    <tr><td><strong>Liquidite</strong></td><td>Pas assez de volume pour remplir les ordres</td><td>Petites tailles de position, marches actifs</td></tr>
+    <tr><td><strong>API down</strong></td><td>Polymarket inaccessible pendant une position</td><td>Stop-loss integre, monitoring continu</td></tr>
+    <tr><td><strong>Fuite de cles</strong></td><td>Cle privee exposee = wallet vide</td><td>.env dans .gitignore, ne jamais commit</td></tr>
+    <tr><td><strong>Reglementaire</strong></td><td>Polymarket a des restrictions geographiques</td><td>Verifier la legalite dans ton pays</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== AVERTISSEMENT ==================== -->
+<h2 id="avertissement">Avertissement</h2>
+
+<div class="callout danger">
+  <strong>AVERTISSEMENT IMPORTANT</strong><br><br>
+  Ce projet est fourni a des fins <strong>educatives et experimentales</strong>. Le trading comporte des risques de perte financiere. Les performances passees (backtests) ne garantissent pas les resultats futurs.<br><br>
+  <strong>Regles d'or :</strong><br>
+  &bull; Ne jamais investir plus que ce que tu peux te permettre de perdre<br>
+  &bull; Toujours commencer en mode DRY_RUN<br>
+  &bull; Respecter l'echelle d'incubation ($1 → $5 → $10...)<br>
+  &bull; Surveiller les bots regulierement<br>
+  &bull; 99% des traders manuels perdent de l'argent — les bots ne sont pas magiques
+</div>
+
+</main>
+</div>
+
+</body>
+</html>

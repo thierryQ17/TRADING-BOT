@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile bot/trader.py data/polymarket_client.py strategies/macd_strategy.py api/server.py)"
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "header": {
+    "title": "Polymarket RBI Bot",
+    "subtitle": "Recherche · Backtest · Incubation",
+    "docs": "Docs",
+    "api": "API",
+    "api_connected": "API Connectee",
+    "api_offline": "API Hors ligne"
+  },
+  "modes": {
+    "dry_run": "Simulation",
+    "live": "Live",
+    "dry_run_label": "Simulation",
+    "live_label": "Trading reel",
+    "dry_run_tooltip": "Mode simulation — aucun ordre reel n'est envoye"
+  },
+  "bots": {
+    "win_rate": "Taux reussite",
+    "win_rate_tooltip": "Pourcentage de trades gagnants",
+    "pnl": "Gain/Perte",
+    "pnl_tooltip": "Profit and Loss — gain ou perte total",
+    "trades": "Trades",
+    "trades_tooltip": "Nombre total de trades executes"
+  },
+  "metrics": {
+    "total_pnl": "Gain/Perte total",
+    "total_pnl_tooltip": "Somme des gains et pertes de toutes les strategies",
+    "total_pnl_sub": "Sur les 3 strategies",
+    "best_strategy": "Meilleure strategie",
+    "best_strategy_tooltip": "La strategie avec le meilleur taux de reussite",
+    "best_strategy_sub": "de reussite",
+    "total_trades": "Total des trades",
+    "total_trades_tooltip": "Nombre total de trades executes par tous les bots",
+    "total_trades_sub": "Depuis le debut",
+    "sharpe": "Ratio de Sharpe",
+    "sharpe_tooltip": "Mesure le rendement ajuste au risque. Au-dessus de 1 = bon, au-dessus de 2 = excellent",
+    "sharpe_sub": "Annualise"
+  },
+  "charts": {
+    "equity_curve": "Courbe de capital",
+    "equity_curve_tooltip": "Evolution du capital pour chaque strategie",
+    "win_rate": "Taux de reussite",
+    "win_rate_tooltip": "Pourcentage de trades gagnants par strategie",
+    "win_rate_label": "Taux de reussite %"
+  },
+  "risk": {
+    "title": "Gestion des risques",
+    "title_tooltip": "Controles de risque — limites de perte et de positions",
+    "daily_loss": "Limite de perte journaliere",
+    "daily_loss_tooltip": "Perte maximale autorisee sur une journee — les bots s'arretent si cette limite est atteinte",
+    "open_positions": "Positions ouvertes",
+    "open_positions_tooltip": "Nombre de bots actuellement en position. M=MACD, R=RSI, C=CVD",
+    "position_size": "Taille par bot",
+    "position_size_tooltip": "Montant investi par trade pour chaque bot",
+    "kill_all": "Tout arreter",
+    "kill_all_tooltip": "Arret d'urgence — stoppe tous les bots et annule tous les ordres ouverts",
+    "kill_all_confirm": "Arreter tous les bots ? Cela annulera tous les ordres ouverts.",
+    "slots": "slots"
+  },
+  "trade_log": {
+    "title": "Journal des trades",
+    "time": "Heure",
+    "strategy": "Strategie",
+    "strategy_tooltip": "Strategie utilisee pour ce trade",
+    "side": "Cote",
+    "side_tooltip": "Achat (BUY) ou Vente (SELL)",
+    "price": "Prix",
+    "price_tooltip": "Prix d'execution du trade",
+    "size": "Taille",
+    "size_tooltip": "Montant en dollars de la position",
+    "pnl": "PnL",
+    "pnl_tooltip": "Profit and Loss — gain ou perte sur ce trade",
+    "status": "Statut",
+    "status_tooltip": "Etat de l'ordre : execute, en attente, annule",
+    "status_filled": "execute",
+    "status_pending": "en attente",
+    "status_cancelled": "annule"
+  },
+  "settings": {
+    "title": "Parametres",
+    "expand": "Ouvrir",
+    "position_size": "Taille de position",
+    "position_size_tooltip": "Montant en dollars investi par trade",
+    "stop_loss": "Stop Loss %",
+    "stop_loss_tooltip": "Pourcentage de perte maximum avant fermeture automatique d'un trade. Ex: 5 = fermeture si perte > 5%",
+    "take_profit": "Take Profit %",
+    "take_profit_tooltip": "Pourcentage de gain declenchant la prise de profit automatique. Ex: 10 = fermeture si gain > 10%",
+    "mode": "Mode",
+    "mode_tooltip": "Simulation = aucun vrai ordre. Live = ordres reels sur Polymarket",
+    "toggle_tooltip": "Activer/desactiver le mode simulation",
+    "account": "Compte",
+    "account_tooltip": "Compte Polymarket utilise pour les trades"
+  }
+}

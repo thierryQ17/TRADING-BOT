@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide debutant — Polymarket RBI Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --text-light: #4a5568;
+  --text-muted: #a0aec0;
+  --blue: #3182ce;
+  --green: #0d9f4f;
+  --red: #e53e3e;
+  --amber: #d69e2e;
+  --purple: #7c3aed;
+  --cyan: #0891b2;
+  --font: 'Instrument Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.8;
+}
+
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: white; font-size: 15px;
+}
+.nav-title { font-weight: 700; font-size: 16px; }
+.nav-links { display: flex; gap: 8px; }
+.nav-links a {
+  padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  text-decoration: none; color: var(--text-light); font-weight: 500;
+}
+.nav-links a:hover { background: var(--bg); }
+.nav-links a.active { background: var(--blue); color: white; }
+
+.container { max-width: 760px; margin: 0 auto; padding: 40px 24px 80px; }
+
+.hero { text-align: center; padding: 40px 0 48px; }
+.hero h1 { font-size: 34px; font-weight: 700; letter-spacing: -1px; margin-bottom: 10px; }
+.hero p { font-size: 17px; color: var(--text-light); }
+
+/* STEP */
+.step {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 28px 24px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.step-badge {
+  position: absolute;
+  top: -12px; left: 24px;
+  background: var(--blue); color: white;
+  font-size: 12px; font-weight: 700;
+  padding: 4px 14px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.step-badge.green { background: var(--green); }
+.step-badge.purple { background: var(--purple); }
+.step-badge.red { background: var(--red); }
+.step-badge.amber { background: var(--amber); }
+.step-badge.cyan { background: var(--cyan); }
+
+.step h2 {
+  font-size: 20px; font-weight: 700; margin-bottom: 12px; margin-top: 4px;
+}
+
+.step p {
+  color: var(--text-light); font-size: 15px; margin-bottom: 14px;
+}
+
+.step strong { color: var(--text); }
+
+.step h3 {
+  font-size: 15px; font-weight: 700; margin: 20px 0 8px; color: var(--text);
+}
+
+/* HIGHLIGHT */
+.tip {
+  padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 14px;
+}
+.tip.blue { background: #ebf8ff; border-left: 4px solid var(--blue); color: #2b6cb0; }
+.tip.green { background: #f0fff4; border-left: 4px solid var(--green); color: #276749; }
+.tip.red { background: #fff5f5; border-left: 4px solid var(--red); color: #c53030; }
+.tip.amber { background: #fffff0; border-left: 4px solid var(--amber); color: #975a16; }
+
+/* VOCAB */
+.vocab {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; margin: 16px 0;
+}
+.vocab-item { display: flex; gap: 8px; margin-bottom: 10px; font-size: 14px; }
+.vocab-item:last-child { margin-bottom: 0; }
+.vocab-word { font-weight: 700; color: var(--blue); white-space: nowrap; font-family: var(--mono); font-size: 13px; min-width: 120px; }
+.vocab-def { color: var(--text-light); }
+
+/* ACTIONS */
+.actions { list-style: none; margin: 12px 0; padding: 0; }
+.actions li {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px; color: var(--text-light);
+}
+.actions li:last-child { border-bottom: none; }
+.num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--blue); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+
+/* TABLE */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.tbl th {
+  text-align: left; padding: 10px 12px; background: var(--bg);
+  border-bottom: 2px solid var(--border); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+}
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-light); }
+
+code {
+  font-family: var(--mono); font-size: 13px; background: var(--bg);
+  padding: 2px 6px; border-radius: 4px; color: var(--purple);
+}
+
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+.footer {
+  text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 13px;
+}
+.footer a { color: var(--blue); text-decoration: none; }
+
+@media (max-width: 600px) {
+  .container { padding: 20px 16px 60px; }
+  .hero h1 { font-size: 24px; }
+  .step { padding: 20px; }
+  .vocab-word { min-width: 80px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-left">
+    <div class="nav-logo">R</div>
+    <span class="nav-title">Guide debutant</span>
+  </div>
+  <div class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/static/docs.html">Docs</a>
+    <a href="/static/guide.html" class="active">Guide</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<div class="hero">
+  <h1>Comment utiliser ton bot de trading</h1>
+  <p>Tout est explique simplement. Lis de haut en bas, etape par etape.</p>
+</div>
+
+<!-- ==================== ETAPE 1 ==================== -->
+<div class="step">
+  <div class="step-badge">Etape 1</div>
+  <h2>C'est quoi ce truc ?</h2>
+
+  <p>C'est un <strong>robot</strong> qui achete et vend automatiquement sur <strong>Polymarket</strong> (un site de paris sur des evenements reels).</p>
+
+  <p>Tu as <strong>3 robots</strong> differents. Chacun a sa methode :</p>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--green)">MACD</span>
+      <span class="vocab-def">Repere quand un prix accelere et saute dans le train</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--blue)">RSI + VWAP</span>
+      <span class="vocab-def">Attend que tout le monde panique, puis achete pas cher</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--purple)">CVD</span>
+      <span class="vocab-def">Detecte quand le prix ment et suit l'argent reel</span>
+    </div>
+  </div>
+
+  <div class="tip green">
+    <strong>Tu n'as pas besoin de comprendre comment ca marche en detail.</strong> Le robot s'en occupe. Toi, tu le surveilles.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 2 ==================== -->
+<div class="step">
+  <div class="step-badge cyan">Etape 2</div>
+  <h2>Les mots a connaitre</h2>
+
+  <p>Tu vas voir ces mots sur le dashboard. Voici ce qu'ils veulent dire :</p>
+
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">Trade</span>
+      <span class="vocab-def">Un achat ou une vente fait par le robot</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">BUY</span>
+      <span class="vocab-def">Le robot achete (il pense que le prix va monter)</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">SELL</span>
+      <span class="vocab-def">Le robot vend (il pense que le prix va baisser)</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">PnL</span>
+      <span class="vocab-def"><strong style="color:var(--green)">Vert (+)</strong> = tu gagnes. <strong style="color:var(--red)">Rouge (-)</strong> = tu perds.</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">Taux reussite</span>
+      <span class="vocab-def">Sur 100 trades, combien sont gagnants. 60% = 60 gagnants.</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">Stop Loss</span>
+      <span class="vocab-def">Filet de securite. Ferme un trade qui perd trop.</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">Take Profit</span>
+      <span class="vocab-def">Encaisse automatiquement quand un trade gagne assez.</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">Simulation</span>
+      <span class="vocab-def">Mode entrainement. Faux argent. Aucun risque.</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">Sharpe</span>
+      <span class="vocab-def">Note de performance. Au-dessus de 1 = bien. Au-dessus de 2 = tres bien.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ETAPE 3 ==================== -->
+<div class="step">
+  <div class="step-badge green">Etape 3</div>
+  <h2>Lancer la plateforme</h2>
+
+  <ol class="actions">
+    <li><div class="num">1</div><div>Va dans le dossier <code>TRADING BOT</code></div></li>
+    <li><div class="num">2</div><div><strong>Double-clique sur <code>start.bat</code></strong></div></li>
+    <li><div class="num">3</div><div>Une fenetre noire s'ouvre — <strong>ne la ferme pas</strong>, c'est le moteur</div></li>
+    <li><div class="num">4</div><div>Le dashboard s'ouvre dans ton navigateur</div></li>
+  </ol>
+
+  <div class="tip amber">
+    <strong>La fenetre noire doit rester ouverte.</strong> Si tu la fermes, tout s'arrete.
+  </div>
+
+  <p>Si le navigateur ne s'ouvre pas, tape <code>http://localhost:1818</code> dans la barre d'adresse.</p>
+</div>
+
+<!-- ==================== ETAPE 4 ==================== -->
+<div class="step">
+  <div class="step-badge purple">Etape 4</div>
+  <h2>Comprendre l'ecran</h2>
+
+  <p>Le dashboard a <strong>6 zones</strong>. De haut en bas :</p>
+
+  <table class="tbl">
+    <thead><tr><th>Zone</th><th>C'est quoi</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Barre du haut</strong></td><td>Le mode (Simulation ou Live), l'heure, les liens vers le guide et la doc</td></tr>
+      <tr><td><strong>3 cartes</strong></td><td>Tes 3 robots. Chacun a un interrupteur, des chiffres et un mini-graphique</td></tr>
+      <tr><td><strong>4 chiffres</strong></td><td>Le resume : gain total, meilleur robot, nombre de trades, note</td></tr>
+      <tr><td><strong>Graphiques</strong></td><td>A gauche : ton capital qui monte ou descend. A droite : comparaison des 3 robots</td></tr>
+      <tr><td><strong>Gestion des risques</strong></td><td>Combien tu as perdu aujourd'hui, quels robots tournent, bouton d'urgence rouge</td></tr>
+      <tr><td><strong>Bas de page</strong></td><td>A gauche : liste des trades. A droite : les reglages</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip blue">
+    <strong>Astuce :</strong> Passe ta souris sur n'importe quel texte du dashboard. Une bulle d'aide apparait pour t'expliquer.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 5 ==================== -->
+<div class="step">
+  <div class="step-badge green">Etape 5</div>
+  <h2>Demarrer ton premier robot</h2>
+
+  <ol class="actions">
+    <li><div class="num">1</div><div>Verifie que le badge en haut dit <strong>"Simulation"</strong> (jaune)</div></li>
+    <li><div class="num">2</div><div>Sur la carte <strong>MACD</strong>, clique sur le <strong>rond gris</strong> a droite</div></li>
+    <li><div class="num">3</div><div>Il devient <strong style="color:var(--green)">vert</strong> = le robot tourne !</div></li>
+    <li><div class="num">4</div><div>Attends quelques secondes, des trades apparaissent dans la liste en bas</div></li>
+  </ol>
+
+  <div class="tip green">
+    <strong>Bravo !</strong> Ton premier robot tourne. C'est du faux argent, tu ne risques rien.
+  </div>
+
+  <p>Pour l'arreter : reclique sur le rond vert, il redevient gris.</p>
+</div>
+
+<!-- ==================== ETAPE 6 ==================== -->
+<div class="step">
+  <div class="step-badge">Etape 6</div>
+  <h2>Activer les 3 robots</h2>
+
+  <p>Active aussi <strong>RSI + VWAP</strong> et <strong>CVD</strong> en cliquant sur leurs interrupteurs.</p>
+
+  <p>Les 3 pastilles M, R, C dans "Gestion des risques" deviennent vertes.</p>
+
+  <div class="tip blue">
+    <strong>Observe pendant plusieurs jours.</strong> Note quel robot gagne le plus regulierement.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 7 ==================== -->
+<div class="step">
+  <div class="step-badge cyan">Etape 7</div>
+  <h2>Les reglages</h2>
+
+  <p>En bas a droite, le panneau <strong>Parametres</strong> :</p>
+
+  <table class="tbl">
+    <thead><tr><th>Reglage</th><th>C'est quoi</th><th>Conseil</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Taille</strong></td><td>Combien de $ par trade</td><td>Laisse a <strong>$1</strong></td></tr>
+      <tr><td><strong>Stop Loss</strong></td><td>Ferme un trade qui perd trop</td><td>Laisse a <strong>5%</strong></td></tr>
+      <tr><td><strong>Take Profit</strong></td><td>Encaisse quand ca gagne assez</td><td>Laisse a <strong>10%</strong></td></tr>
+      <tr><td><strong>Mode</strong></td><td>Simulation ou argent reel</td><td>Reste en <strong>Simulation</strong></td></tr>
+      <tr><td><strong>Compte</strong></td><td>Quel portefeuille utiliser</td><td>Pas important en simulation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip red">
+    <strong>Ne change rien au hasard.</strong> En cas de doute, laisse les valeurs par defaut.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 8 ==================== -->
+<div class="step">
+  <div class="step-badge purple">Etape 8</div>
+  <h2>Lire la liste des trades</h2>
+
+  <p>Le tableau en bas a gauche montre tout ce que les robots ont fait :</p>
+
+  <table class="tbl">
+    <thead><tr><th>Colonne</th><th>Ca veut dire</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Heure</strong></td><td>Quand le trade a eu lieu</td></tr>
+      <tr><td><strong>Strategie</strong></td><td>Quel robot l'a fait</td></tr>
+      <tr><td><strong style="color:var(--green)">BUY</strong> / <strong style="color:var(--red)">SELL</strong></td><td>Achat ou vente</td></tr>
+      <tr><td><strong>Prix</strong></td><td>A quel prix</td></tr>
+      <tr><td><strong>Taille</strong></td><td>Combien de $</td></tr>
+      <tr><td><strong style="color:var(--green)">+$0.05</strong></td><td>Tu as gagne 5 centimes</td></tr>
+      <tr><td><strong style="color:var(--red)">-$0.03</strong></td><td>Tu as perdu 3 centimes</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip blue">
+    <strong>Astuce :</strong> Clique sur le titre d'une colonne pour trier. Clique sur "PnL" pour voir les meilleurs trades en premier.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 9 ==================== -->
+<div class="step">
+  <div class="step-badge amber">Etape 9</div>
+  <h2>Passer a l'argent reel</h2>
+
+  <div class="tip red">
+    <strong>Fais ca UNIQUEMENT apres 2 semaines de simulation positive.</strong>
+  </div>
+
+  <h3>Preparer</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>Cree un compte <strong>Polymarket</strong> avec un portefeuille crypto</div></li>
+    <li><div class="num">2</div><div>Ouvre le fichier <code>.env</code> avec le Bloc-notes</div></li>
+    <li><div class="num">3</div><div>Mets ta cle privee et ton adresse de portefeuille</div></li>
+    <li><div class="num">4</div><div>Relance <code>start.bat</code></div></li>
+  </ol>
+
+  <h3>Activer le mode Live</h3>
+  <ol class="actions">
+    <li><div class="num">5</div><div>Dans Parametres, desactive l'interrupteur <strong>Mode</strong></div></li>
+    <li><div class="num">6</div><div>Le badge passe en <strong style="color:var(--green)">vert "Live"</strong></div></li>
+    <li><div class="num">7</div><div>Laisse la taille a <strong>$1</strong></div></li>
+  </ol>
+
+  <h3>L'echelle a respecter</h3>
+  <table class="tbl">
+    <thead><tr><th>Mise</th><th>Quand monter</th></tr></thead>
+    <tbody>
+      <tr><td><strong>$1</strong></td><td>Debut — observer pendant 2 semaines</td></tr>
+      <tr><td><strong>$5</strong></td><td>20 trades reussis a plus de 55%</td></tr>
+      <tr><td><strong>$10</strong></td><td>20 trades de plus toujours positifs</td></tr>
+      <tr><td><strong>$50</strong></td><td>Plusieurs semaines stables</td></tr>
+      <tr><td><strong>$100</strong></td><td>Confiance totale</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip amber">
+    <strong>Ca prend des semaines.</strong> C'est normal. Ceux qui vont trop vite sont ceux qui perdent.
+  </div>
+</div>
+
+<!-- ==================== ETAPE 10 ==================== -->
+<div class="step">
+  <div class="step-badge red">Etape 10</div>
+  <h2>Les 10 regles d'or</h2>
+
+  <div class="tip red" style="font-size:15px; line-height: 2.2;">
+    <strong>1.</strong> Ne mise jamais de l'argent que tu ne peux pas perdre<br>
+    <strong>2.</strong> Commence toujours en Simulation<br>
+    <strong>3.</strong> Commence toujours avec $1<br>
+    <strong>4.</strong> Ne partage JAMAIS ton fichier <code>.env</code><br>
+    <strong>5.</strong> Verifie les robots au moins une fois par jour<br>
+    <strong>6.</strong> Si ca perd trop → bouton rouge "Tout arreter"<br>
+    <strong>7.</strong> Un robot peut perdre de l'argent — c'est pas magique<br>
+    <strong>8.</strong> Ce qui a marche hier peut ne pas marcher demain<br>
+    <strong>9.</strong> En cas de doute → reste en Simulation<br>
+    <strong>10.</strong> Le trading c'est un marathon, pas un sprint
+  </div>
+
+  <div class="tip green" style="text-align:center; font-size: 16px;">
+    <strong>Tu es pret.</strong> Retourne sur le <a href="/" style="color:inherit;text-decoration:underline;">dashboard</a> et lance ton premier robot !
+  </div>
+</div>
+
+<div class="footer">
+  <a href="/">Dashboard</a> · <a href="/static/docs.html" target="_blank">Documentation technique</a>
+</div>
+
+</div>
+</body>
+</html>

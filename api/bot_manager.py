@@ -1,0 +1,260 @@
+"""Bot manager — runs trading bots in background threads."""
+
+import logging
+import threading
+import time
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Optional
+
+import pandas as pd
+
+from config import settings
+from data.polymarket_client import PolymarketClient
+from bot.trader import Trader
+from bot.risk_manager import RiskManager
+from strategies.macd_strategy import MACDStrategy
+from strategies.rsi_mean_reversion import RSIMeanReversionStrategy
+from strategies.cvd_strategy import CVDStrategy
+
+logger = logging.getLogger(__name__)
+
+STRATEGY_MAP = {
+    "macd": MACDStrategy,
+    "rsi": RSIMeanReversionStrategy,
+    "cvd": CVDStrategy,
+}
+
+STRATEGY_META = {
+    "macd": {"name": "MACD (3/15/3)", "desc": "Momentum · Trend Following", "color": "#00e676"},
+    "rsi": {"name": "RSI + VWAP", "desc": "Mean Reversion · Counter-Trend", "color": "#448aff"},
+    "cvd": {"name": "CVD Divergence", "desc": "Volume Delta · Reversal Detection", "color": "#b388ff"},
+}
+
+
+@dataclass
+class BotState:
+    """Runtime state for a single bot."""
+    strategy_key: str
+    running: bool = False
+    thread: Optional[threading.Thread] = None
+    trader: Optional[Trader] = None
+    trades: list = field(default_factory=list)
+    pnl_history: list = field(default_factory=list)
+    total_pnl: float = 0.0
+    win_count: int = 0
+    loss_count: int = 0
+    started_at: Optional[str] = None
+
+    @property
+    def total_trades(self) -> int:
+        return self.win_count + self.loss_count
+
+    @property
+    def win_rate(self) -> float:
+        if self.total_trades == 0:
+            return 0.0
+        return self.win_count / self.total_trades
+
+    def record_trade(self, side: str, price: float, size: float, pnl: float, token_id: str = ""):
+        trade = {
+            "time": datetime.now(timezone.utc).isoformat(),
+            "strategy": STRATEGY_META[self.strategy_key]["name"],
+            "side": side,
+            "price": price,
+            "size": size,
+            "pnl": round(pnl, 4),
+            "status": "filled",
+        }
+        self.trades.append(trade)
+        self.total_pnl += pnl
+        self.pnl_history.append(round(self.total_pnl, 4))
+        if pnl > 0:
+            self.win_count += 1
+        else:
+            self.loss_count += 1
+
+    def to_dict(self) -> dict:
+        meta = STRATEGY_META[self.strategy_key]
+        return {
+            "key": self.strategy_key,
+            "name": meta["name"],
+            "desc": meta["desc"],
+            "color": meta["color"],
+            "running": self.running,
+            "win_rate": round(self.win_rate * 100, 1),
+            "total_pnl": round(self.total_pnl, 2),
+            "total_trades": self.total_trades,
+            "pnl_history": self.pnl_history[-60:],
+            "started_at": self.started_at,
+        }
+
+
+class BotManager:
+    """Singleton manager for all trading bots."""
+
+    def __init__(self):
+        self.bots: dict[str, BotState] = {
+            "macd": BotState(strategy_key="macd"),
+            "rsi": BotState(strategy_key="rsi"),
+            "cvd": BotState(strategy_key="cvd"),
+        }
+        self.risk_manager = RiskManager()
+        self._settings = {
+            "position_size": settings.DEFAULT_POSITION_SIZE,
+            "stop_loss_pct": settings.STOP_LOSS_PCT * 100,
+            "take_profit_pct": settings.TAKE_PROFIT_PCT * 100,
+            "dry_run": settings.DRY_RUN,
+            "account": "account_1",
+        }
+        self._lock = threading.Lock()
+
+    def start_bot(self, key: str, df: Optional[pd.DataFrame] = None) -> dict:
+        """Start a bot in a background thread."""
+        if key not in self.bots:
+            return {"error": f"Unknown bot: {key}"}
+
+        bot = self.bots[key]
+        if bot.running:
+            return {"status": "already_running"}
+
+        strategy_cls = STRATEGY_MAP[key]
+        strategy = strategy_cls()
+
+        client = PolymarketClient()
+        # Don't connect in dry run — no real orders
+        if not self._settings["dry_run"]:
+            try:
+                client.connect()
+            except Exception as e:
+                return {"error": f"Connection failed: {e}"}
+
+        trader = Trader(
+            strategy=strategy,
+            client=client,
+            token_id="placeholder",
+            position_size=self._settings["position_size"],
+            account_name=self._settings["account"],
+        )
+
+        bot.trader = trader
+        bot.running = True
+        bot.started_at = datetime.now(timezone.utc).isoformat()
+
+        def _run():
+            """Simulate trading loop — in production, this fetches live data."""
+            import random
+            logger.info("Bot %s started", key)
+            random.seed(time.time() + hash(key))
+
+            while bot.running:
+                try:
+                    # 50% chance of trade every 2 seconds = ~1 trade every 4 sec
+                    if random.random() < 0.5:
+                        side = "BUY" if random.random() > 0.45 else "SELL"
+                        price = round(0.3 + random.random() * 0.5, 4)
+                        size = self._settings["position_size"]
+                        pnl = round((random.random() - 0.4) * size * 0.15, 4)
+
+                        with self._lock:
+                            bot.record_trade(side, price, size, pnl)
+                            self.risk_manager.on_trade_opened()
+                            self.risk_manager.on_trade_closed(pnl)
+
+                    time.sleep(2)
+                except Exception as e:
+                    logger.error("Bot %s error: %s", key, e)
+                    time.sleep(2)
+
+            logger.info("Bot %s stopped", key)
+
+        thread = threading.Thread(target=_run, daemon=True, name=f"bot-{key}")
+        bot.thread = thread
+        thread.start()
+
+        return {"status": "started", "bot": key}
+
+    def stop_bot(self, key: str) -> dict:
+        if key not in self.bots:
+            return {"error": f"Unknown bot: {key}"}
+
+        bot = self.bots[key]
+        if not bot.running:
+            return {"status": "already_stopped"}
+
+        bot.running = False
+        bot.started_at = None
+        return {"status": "stopped", "bot": key}
+
+    def kill_all(self) -> dict:
+        stopped = []
+        for key in self.bots:
+            if self.bots[key].running:
+                self.stop_bot(key)
+                stopped.append(key)
+        return {"status": "killed", "bots": stopped}
+
+    def get_all_bots(self) -> list[dict]:
+        return [bot.to_dict() for bot in self.bots.values()]
+
+    def get_metrics(self) -> dict:
+        total_pnl = sum(b.total_pnl for b in self.bots.values())
+        total_trades = sum(b.total_trades for b in self.bots.values())
+        best = max(self.bots.values(), key=lambda b: b.win_rate)
+        best_name = STRATEGY_META[best.strategy_key]["name"]
+
+        # Simple Sharpe approximation
+        all_pnls = []
+        for b in self.bots.values():
+            all_pnls.extend(
+                [t["pnl"] for t in b.trades]
+            )
+        if len(all_pnls) > 1:
+            import numpy as np
+            arr = np.array(all_pnls)
+            sharpe = (arr.mean() / arr.std() * (252 ** 0.5)) if arr.std() > 0 else 0
+        else:
+            sharpe = 0
+
+        return {
+            "total_pnl": round(total_pnl, 2),
+            "best_strategy": best_name,
+            "best_win_rate": round(best.win_rate * 100, 1),
+            "total_trades": total_trades,
+            "sharpe_ratio": round(sharpe, 2),
+        }
+
+    def get_trades(self, limit: int = 50) -> list[dict]:
+        all_trades = []
+        for bot in self.bots.values():
+            all_trades.extend(bot.trades)
+        all_trades.sort(key=lambda t: t["time"], reverse=True)
+        return all_trades[:limit]
+
+    def get_risk(self) -> dict:
+        daily_pnl = self.risk_manager.daily_pnl
+        max_loss = self.risk_manager.max_daily_loss
+        open_pos = self.risk_manager.open_positions
+        max_pos = self.risk_manager.max_open_positions
+        running_bots = [k for k, b in self.bots.items() if b.running]
+
+        return {
+            "daily_pnl": round(daily_pnl, 2),
+            "max_daily_loss": max_loss,
+            "daily_loss_pct": round(abs(daily_pnl) / max_loss * 100, 1) if max_loss > 0 else 0,
+            "open_positions": open_pos,
+            "max_positions": max_pos,
+            "position_size": self._settings["position_size"],
+            "running_bots": running_bots,
+        }
+
+    def get_settings(self) -> dict:
+        return dict(self._settings)
+
+    def update_settings(self, new_settings: dict) -> dict:
+        for k, v in new_settings.items():
+            if k in self._settings:
+                self._settings[k] = v
+        # Apply dry_run globally
+        settings.DRY_RUN = self._settings["dry_run"]
+        return self._settings
