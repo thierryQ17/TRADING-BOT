@@ -25,7 +25,7 @@ from data.storage import close_db
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "admin")
 AUTH_SECRET = os.getenv("AUTH_SECRET", "default-secret-change-me")
-TOKEN_EXPIRY = 86400  # 24h
+TOKEN_EXPIRY = 864000  # 10 jours
 
 # Singleton bot manager
 manager = BotManager()
