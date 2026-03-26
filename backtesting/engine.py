@@ -17,15 +17,15 @@ class BacktestEngine:
     def __init__(
         self,
         strategy: BaseStrategy,
-        position_size: float = settings.DEFAULT_POSITION_SIZE,
-        stop_loss_pct: float = settings.STOP_LOSS_PCT,
-        take_profit_pct: float = settings.TAKE_PROFIT_PCT,
+        position_size: float = None,
+        stop_loss_pct: float = None,
+        take_profit_pct: float = None,
         commission: float = 0.0,  # Polymarket limit orders = 0 fees
     ):
         self.strategy = strategy
-        self.position_size = position_size
-        self.stop_loss_pct = stop_loss_pct
-        self.take_profit_pct = take_profit_pct
+        self.position_size = position_size if position_size is not None else settings.runtime.default_position_size
+        self.stop_loss_pct = stop_loss_pct if stop_loss_pct is not None else settings.runtime.stop_loss_pct
+        self.take_profit_pct = take_profit_pct if take_profit_pct is not None else settings.runtime.take_profit_pct
         self.commission = commission
 
     def run(self, df: pd.DataFrame) -> BacktestResult:

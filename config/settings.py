@@ -78,14 +78,3 @@ runtime = Settings(
     log_level=os.getenv("LOG_LEVEL", "INFO"),
     token_id=os.getenv("POLYMARKET_TOKEN_ID", ""),
 )
-
-# --- Backward compatibility: module-level aliases ---
-DEFAULT_TIMEFRAME = runtime.default_timeframe
-DEFAULT_POSITION_SIZE = runtime.default_position_size
-MAX_POSITION_SIZE = runtime.max_position_size
-MAX_DAILY_LOSS = runtime.max_daily_loss
-MAX_OPEN_POSITIONS = runtime.max_open_positions
-STOP_LOSS_PCT = runtime.stop_loss_pct
-TAKE_PROFIT_PCT = runtime.take_profit_pct
-DRY_RUN = runtime.dry_run
-LOG_LEVEL = runtime.log_level

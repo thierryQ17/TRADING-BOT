@@ -316,5 +316,12 @@ class BotManager:
         settings.runtime.update(
             dry_run=self._settings["dry_run"],
             default_position_size=self._settings["position_size"],
+            stop_loss_pct=self._settings["stop_loss_pct"] / 100,
+            take_profit_pct=self._settings["take_profit_pct"] / 100,
         )
+        # Sync risk manager with new values
+        self.risk_manager.max_position_size = settings.runtime.max_position_size
+        self.risk_manager.max_daily_loss = settings.runtime.max_daily_loss
+        self.risk_manager.max_open_positions = settings.runtime.max_open_positions
+        self.risk_manager.stop_loss_pct = settings.runtime.stop_loss_pct
         return self._settings

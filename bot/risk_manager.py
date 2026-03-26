@@ -13,15 +13,15 @@ class RiskManager:
 
     def __init__(
         self,
-        max_position_size: float = settings.MAX_POSITION_SIZE,
-        max_daily_loss: float = settings.MAX_DAILY_LOSS,
-        max_open_positions: int = settings.MAX_OPEN_POSITIONS,
-        stop_loss_pct: float = settings.STOP_LOSS_PCT,
+        max_position_size: float = None,
+        max_daily_loss: float = None,
+        max_open_positions: int = None,
+        stop_loss_pct: float = None,
     ):
-        self.max_position_size = max_position_size
-        self.max_daily_loss = max_daily_loss
-        self.max_open_positions = max_open_positions
-        self.stop_loss_pct = stop_loss_pct
+        self.max_position_size = max_position_size if max_position_size is not None else settings.runtime.max_position_size
+        self.max_daily_loss = max_daily_loss if max_daily_loss is not None else settings.runtime.max_daily_loss
+        self.max_open_positions = max_open_positions if max_open_positions is not None else settings.runtime.max_open_positions
+        self.stop_loss_pct = stop_loss_pct if stop_loss_pct is not None else settings.runtime.stop_loss_pct
 
         self._daily_pnl = 0.0
         self._daily_reset_date = datetime.now(timezone.utc).date()

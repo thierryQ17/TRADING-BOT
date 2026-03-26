@@ -25,13 +25,13 @@ class Trader:
         strategy: BaseStrategy,
         client: PolymarketClient,
         token_id: str,
-        position_size: float = settings.DEFAULT_POSITION_SIZE,
+        position_size: float = None,
         account_name: str = "default",
     ):
         self.strategy = strategy
         self.client = client
         self.token_id = token_id
-        self.position_size = position_size
+        self.position_size = position_size if position_size is not None else settings.runtime.default_position_size
         self.account_name = account_name
 
         self.risk = RiskManager()
