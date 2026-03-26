@@ -8,6 +8,8 @@ services:
     ports:
       - "8818:1818"
     volumes:
+      # .env file (mounted for config UI read/write)
+      - ./.env:/app/.env
       # SQLite persistence
       - trading_data:/app/data
       # Logs persistence
