@@ -87,7 +87,11 @@ body::after {
 .live .status-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
 .dry .status-dot { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.header-right { display: flex; align-items: center; gap: 16px; }
+.header-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.tab-bar { display: flex; gap: 2px; background: var(--bg-3); border-radius: 8px; padding: 2px; }
+.tab-btn { font-family: var(--font-mono); font-size: 11px; font-weight: 500; padding: 5px 14px; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: var(--text-2); transition: all 0.15s; }
+.tab-btn.active { background: var(--bg-2); color: var(--text-0); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.tab-btn:hover:not(.active) { color: var(--text-1); }
 .header-time { font-size: 12px; color: var(--text-2); }
 .header-time span { color: var(--text-1); }
 .conn-status { font-size: 10px; padding: 4px 10px; border-radius: 10px; }
@@ -350,11 +354,14 @@ tr:hover td { background: var(--bg-2); }
     </div>
   </div>
   <div class="header-right">
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabDashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" id="tabConfig" onclick="switchTab('config')">Configuration</button>
+    </div>
     <a href="/static/guide.html" target="_blank" style="font-size:11px;color:var(--green);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Guide</a>
     <a href="/static/docs.html" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Docs</a>
     <a href="/static/audit.html" target="_blank" style="font-size:11px;color:#ff8c38;text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Audit</a>
     <a href="/docs" target="_blank" style="font-size:11px;color:var(--text-2);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">API</a>
-    <a href="#configPanel" onclick="document.getElementById('configBody').style.display='block';document.getElementById('configToggleBtn').textContent='Fermer';loadConfig();document.getElementById('configPanel').scrollIntoView({behavior:'smooth'});" style="font-size:11px;color:var(--purple);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Config</a>
     <div class="conn-status ok" id="connStatus">API Connected</div>
     <div class="header-time"><span id="clock">--:--:--</span></div>
   </div>
@@ -362,6 +369,7 @@ tr:hover td { background: var(--bg-2); }
 
 <main class="main">
 
+<div id="viewDashboard">
   <!-- BOT CARDS — rendered dynamically -->
   <div class="bots-grid animate-in" id="botsGrid"></div>
 
@@ -467,13 +475,17 @@ tr:hover td { background: var(--bg-2); }
       </div>
     </div>
 
+  </div>
+
+</div><!-- /viewDashboard -->
+
+<div id="viewConfig" style="display:none;">
     <!-- CONFIGURATION -->
     <div class="panel" id="configPanel">
       <div class="panel-header">
         <div class="panel-title">Configuration</div>
-        <button class="settings-toggle" onclick="toggleConfig()" id="configToggleBtn">Ouvrir</button>
       </div>
-      <div class="settings-body" id="configBody" style="display:none;">
+      <div class="settings-body" id="configBody" style="display:block;">
         <div id="configForm" style="display:grid;gap:16px;">
 
           <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:4px;">Polymarket</div>
@@ -545,7 +557,7 @@ tr:hover td { background: var(--bg-2); }
       </div>
     </div>
 
-  </div>
+</div><!-- /viewConfig -->
 
 </main>
 
@@ -1177,19 +1189,17 @@ async function refreshLogs() {
   container.scrollTop = 0;
 }
 
-// ========== CONFIGURATION ==========
-function toggleConfig() {
-  const body = document.getElementById('configBody');
-  const btn = document.getElementById('configToggleBtn');
-  if (body.style.display === 'none') {
-    body.style.display = 'block';
-    btn.textContent = 'Fermer';
-    loadConfig();
-  } else {
-    body.style.display = 'none';
-    btn.textContent = 'Ouvrir';
-  }
+// ========== TABS ==========
+function switchTab(tab) {
+  document.getElementById('viewDashboard').style.display = tab === 'dashboard' ? '' : 'none';
+  document.getElementById('viewConfig').style.display = tab === 'config' ? '' : 'none';
+  document.getElementById('tabDashboard').className = 'tab-btn' + (tab === 'dashboard' ? ' active' : '');
+  document.getElementById('tabConfig').className = 'tab-btn' + (tab === 'config' ? ' active' : '');
+  if (tab === 'config') loadConfig();
+  window.scrollTo(0, 0);
 }
+
+// ========== CONFIGURATION ==========
 
 async function loadConfig() {
   const data = await api('/api/config');
