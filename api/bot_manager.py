@@ -16,6 +16,7 @@ from data.polymarket_client import PolymarketClient
 from data.downloader import OHLCVDownloader
 from bot.trader import Trader
 from bot.risk_manager import RiskManager
+from incubation.alerter import Alerter
 from strategies.macd_strategy import MACDStrategy
 from strategies.rsi_mean_reversion import RSIMeanReversionStrategy
 from strategies.cvd_strategy import CVDStrategy
@@ -103,6 +104,12 @@ class BotManager:
             "cvd": BotState(strategy_key="cvd"),
         }
         self.risk_manager = RiskManager()
+        self.alerter = Alerter(
+            loss_threshold=settings.ALERT_LOSS_THRESHOLD,
+            gain_threshold=settings.ALERT_GAIN_THRESHOLD,
+            daily_loss_threshold=settings.ALERT_DAILY_LOSS_THRESHOLD,
+            daily_gain_threshold=settings.ALERT_DAILY_GAIN_THRESHOLD,
+        )
         self._settings = {
             "position_size": settings.runtime.default_position_size,
             "stop_loss_pct": settings.runtime.stop_loss_pct * 100,
@@ -158,6 +165,9 @@ class BotManager:
                 bot.record_trade(side, price, size, pnl)
                 if pnl != 0:
                     self.risk_manager.on_trade_closed(pnl)
+                    strategy_name = STRATEGY_META[key]["name"]
+                    self.alerter.check_trade(strategy_name, side, price, size, pnl)
+                    self.alerter.check_daily_pnl(self.risk_manager.daily_pnl)
                 else:
                     self.risk_manager.on_trade_opened()
 
@@ -213,6 +223,7 @@ class BotManager:
                             time.sleep(interval)
                 except Exception as e:
                     logger.error("Bot %s fatal error: %s", key, e)
+                    self.alerter.notify_bot_error(key, str(e))
 
             logger.info("Bot %s stopped", key)
 
@@ -243,6 +254,8 @@ class BotManager:
             if self.bots[key].running:
                 self.bots[key].running = False
                 stopped.append(key)
+        if stopped:
+            self.alerter.notify_kill_all(stopped)
         # Join all threads after setting flags
         for key in stopped:
             bot = self.bots[key]

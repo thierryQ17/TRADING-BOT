@@ -112,6 +112,19 @@ async def get_risk():
     return manager.get_risk()
 
 
+# --- Alerts ---
+
+@app.get("/api/alerts/status")
+async def alerts_status():
+    return {"enabled": manager.alerter.enabled}
+
+
+@app.post("/api/alerts/test")
+async def alerts_test():
+    ok = manager.alerter.send_test()
+    return {"status": "sent" if ok else "failed", "enabled": manager.alerter.enabled}
+
+
 # --- Settings ---
 
 class SettingsUpdate(BaseModel):

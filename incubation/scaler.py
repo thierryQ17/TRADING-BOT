@@ -22,7 +22,8 @@ MAX_CONSECUTIVE_LOSSES = 5
 class Scaler:
     """Automatically scale position size based on live performance."""
 
-    def __init__(self, starting_level: int = 0):
+    def __init__(self, starting_level: int = 0, alerter=None):
+        self.alerter = alerter
         self.level = starting_level
         self._trades_at_level = 0
         self._wins_at_level = 0
@@ -61,10 +62,10 @@ class Scaler:
             if self.level < len(SCALING_LADDER) - 1:
                 old = self.current_size
                 self.level += 1
-                logger.info(
-                    "LEVEL UP: $%.0f -> $%.0f (win rate: %.1f%%, PF: %.2f over %d trades)",
-                    old, self.current_size, win_rate * 100, pf, self._trades_at_level,
-                )
+                reason = f"win rate: {win_rate:.1%}, PF: {pf:.2f} over {self._trades_at_level} trades"
+                logger.info("LEVEL UP: $%.0f -> $%.0f (%s)", old, self.current_size, reason)
+                if self.alerter:
+                    self.alerter.notify_level_change("up", old, self.current_size, reason)
                 self._reset_level_stats()
         elif win_rate < MIN_WIN_RATE_FLOOR and self.level > 0:
             self._level_down(f"poor performance (win rate: {win_rate:.1%}, PF: {pf:.2f})")
@@ -79,9 +80,9 @@ class Scaler:
     def _level_down(self, reason: str) -> None:
         old = self.current_size
         self.level = max(0, self.level - 1)
-        logger.warning(
-            "LEVEL DOWN: $%.0f -> $%.0f (%s)", old, self.current_size, reason
-        )
+        logger.warning("LEVEL DOWN: $%.0f -> $%.0f (%s)", old, self.current_size, reason)
+        if self.alerter:
+            self.alerter.notify_level_change("down", old, self.current_size, reason)
         self._reset_level_stats()
         self._consecutive_losses = 0
 

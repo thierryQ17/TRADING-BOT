@@ -16,6 +16,14 @@ ORDER_TYPE = "limit"  # always limit — market orders have fees on Polymarket
 PRIVATE_KEY = os.getenv("POLYMARKET_PRIVATE_KEY", "")
 FUNDER_ADDRESS = os.getenv("POLYMARKET_FUNDER_ADDRESS", "")
 
+# --- Telegram alerts ---
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+ALERT_LOSS_THRESHOLD = float(os.getenv("ALERT_LOSS_THRESHOLD", "5"))
+ALERT_GAIN_THRESHOLD = float(os.getenv("ALERT_GAIN_THRESHOLD", "10"))
+ALERT_DAILY_LOSS_THRESHOLD = float(os.getenv("ALERT_DAILY_LOSS_THRESHOLD", "20"))
+ALERT_DAILY_GAIN_THRESHOLD = float(os.getenv("ALERT_DAILY_GAIN_THRESHOLD", "50"))
+
 # --- Strategy defaults (constants) ---
 MACD_FAST = 3
 MACD_SLOW = 15
