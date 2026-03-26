@@ -465,6 +465,85 @@ tr:hover td { background: var(--bg-2); }
         <div style="color:var(--text-2);padding:20px;text-align:center;">En attente de logs...</div>
       </div>
     </div>
+
+    <!-- CONFIGURATION -->
+    <div class="panel" id="configPanel">
+      <div class="panel-header">
+        <div class="panel-title">Configuration</div>
+        <button class="settings-toggle" onclick="toggleConfig()" id="configToggleBtn">Ouvrir</button>
+      </div>
+      <div class="settings-body" id="configBody" style="display:none;">
+        <div id="configForm" style="display:grid;gap:16px;">
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:4px;">Polymarket</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-group"><label>Cle privee</label><input type="password" class="setting-input cfg" id="cfg_POLYMARKET_PRIVATE_KEY"></div>
+            <div class="setting-group"><label>Adresse wallet</label><input type="text" class="setting-input cfg" id="cfg_POLYMARKET_FUNDER_ADDRESS"></div>
+            <div class="setting-group"><label>Token ID (marche)</label><input type="text" class="setting-input cfg" id="cfg_POLYMARKET_TOKEN_ID" placeholder="vide = demo"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Risques</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="setting-group"><label>Position max ($)</label><input type="number" class="setting-input cfg" id="cfg_MAX_POSITION_SIZE"></div>
+            <div class="setting-group"><label>Perte jour max ($)</label><input type="number" class="setting-input cfg" id="cfg_MAX_DAILY_LOSS"></div>
+            <div class="setting-group"><label>Positions ouvertes max</label><input type="number" class="setting-input cfg" id="cfg_MAX_OPEN_POSITIONS"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Telegram</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-group"><label>Bot Token</label><input type="text" class="setting-input cfg" id="cfg_TELEGRAM_BOT_TOKEN"></div>
+            <div class="setting-group"><label>Chat ID</label><input type="text" class="setting-input cfg" id="cfg_TELEGRAM_CHAT_ID"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Email (SMTP)</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-group"><label>Serveur SMTP</label><input type="text" class="setting-input cfg" id="cfg_SMTP_HOST"></div>
+            <div class="setting-group"><label>Port</label><input type="number" class="setting-input cfg" id="cfg_SMTP_PORT"></div>
+            <div class="setting-group"><label>Email</label><input type="email" class="setting-input cfg" id="cfg_SMTP_USER"></div>
+            <div class="setting-group"><label>Mot de passe SMTP</label><input type="password" class="setting-input cfg" id="cfg_SMTP_PASSWORD"></div>
+            <div class="setting-group"><label>Destinataire alertes</label><input type="email" class="setting-input cfg" id="cfg_ALERT_EMAIL_TO"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Seuils d'alerte ($)</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+            <div class="setting-group"><label>Perte/trade</label><input type="number" class="setting-input cfg" id="cfg_ALERT_LOSS_THRESHOLD"></div>
+            <div class="setting-group"><label>Gain/trade</label><input type="number" class="setting-input cfg" id="cfg_ALERT_GAIN_THRESHOLD"></div>
+            <div class="setting-group"><label>Perte/jour</label><input type="number" class="setting-input cfg" id="cfg_ALERT_DAILY_LOSS_THRESHOLD"></div>
+            <div class="setting-group"><label>Gain/jour</label><input type="number" class="setting-input cfg" id="cfg_ALERT_DAILY_GAIN_THRESHOLD"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Copy-Trading</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="setting-group"><label>Min trades</label><input type="number" class="setting-input cfg" id="cfg_COPYTRADE_MIN_TRADES"></div>
+            <div class="setting-group"><label>Win rate min</label><input type="number" class="setting-input cfg" id="cfg_COPYTRADE_MIN_WIN_RATE" step="0.01"></div>
+            <div class="setting-group"><label>Top N wallets</label><input type="number" class="setting-input cfg" id="cfg_COPYTRADE_TOP_N"></div>
+            <div class="setting-group"><label>Scan interval (s)</label><input type="number" class="setting-input cfg" id="cfg_COPYTRADE_SCAN_INTERVAL"></div>
+            <div class="setting-group"><label>Rescore interval (s)</label><input type="number" class="setting-input cfg" id="cfg_COPYTRADE_RESCORE_INTERVAL"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Authentification</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-group"><label>Identifiant</label><input type="text" class="setting-input cfg" id="cfg_AUTH_USERNAME"></div>
+            <div class="setting-group"><label>Mot de passe</label><input type="password" class="setting-input cfg" id="cfg_AUTH_PASSWORD"></div>
+          </div>
+
+          <div style="font-weight:600;font-size:12px;color:var(--blue);border-bottom:1px solid var(--border);padding-bottom:4px;margin-top:8px;">Systeme</div>
+          <div class="settings-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="setting-group"><label>Mode</label><select class="setting-input cfg" id="cfg_DRY_RUN"><option value="true">Simulation</option><option value="false">Live</option></select></div>
+            <div class="setting-group"><label>Log Level</label><select class="setting-input cfg" id="cfg_LOG_LEVEL"><option>INFO</option><option>DEBUG</option><option>WARNING</option><option>ERROR</option></select></div>
+            <div class="setting-group"><label>CORS Origins</label><input type="text" class="setting-input cfg" id="cfg_CORS_ORIGINS"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <button onclick="saveConfig()" style="padding:8px 24px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;font-weight:600;cursor:pointer;">Enregistrer</button>
+            <span id="configStatus" style="font-size:12px;color:var(--green);align-self:center;"></span>
+          </div>
+          <div style="font-size:11px;color:var(--text-2);margin-top:2px;">Les modifications necessitent un redemarrage du serveur pour prendre effet.</div>
+
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -1095,6 +1174,56 @@ async function refreshLogs() {
     </div>`;
   }).join('');
   container.scrollTop = 0;
+}
+
+// ========== CONFIGURATION ==========
+function toggleConfig() {
+  const body = document.getElementById('configBody');
+  const btn = document.getElementById('configToggleBtn');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    btn.textContent = 'Fermer';
+    loadConfig();
+  } else {
+    body.style.display = 'none';
+    btn.textContent = 'Ouvrir';
+  }
+}
+
+async function loadConfig() {
+  const data = await api('/api/config');
+  if (!data) return;
+  for (const [key, val] of Object.entries(data)) {
+    const el = document.getElementById('cfg_' + key);
+    if (el) {
+      if (el.tagName === 'SELECT') {
+        el.value = val;
+      } else {
+        el.value = val;
+      }
+    }
+  }
+}
+
+async function saveConfig() {
+  const inputs = document.querySelectorAll('.cfg');
+  const body = {};
+  inputs.forEach(el => {
+    const key = el.id.replace('cfg_', '');
+    body[key] = el.value;
+  });
+  const res = await api('/api/config', 'PUT', body);
+  const status = document.getElementById('configStatus');
+  if (res && res.updated) {
+    status.style.color = 'var(--green)';
+    status.textContent = res.updated.length > 0
+      ? 'Enregistre (' + res.updated.join(', ') + ')'
+      : 'Aucune modification';
+    setTimeout(() => status.textContent = '', 4000);
+  } else {
+    status.style.color = 'var(--red)';
+    status.textContent = 'Erreur';
+  }
 }
 
 // ========== MAIN REFRESH LOOP ==========

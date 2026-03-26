@@ -233,6 +233,99 @@ async def update_settings(body: SettingsUpdate):
     return manager.update_settings(updates)
 
 
+# --- Config (.env) ---
+
+# Keys that are masked when reading (sensitive)
+_SENSITIVE_KEYS = {"POLYMARKET_PRIVATE_KEY", "AUTH_PASSWORD", "AUTH_SECRET", "SMTP_PASSWORD"}
+
+# All configurable keys grouped by section
+_CONFIG_KEYS = [
+    "POLYMARKET_PRIVATE_KEY", "POLYMARKET_FUNDER_ADDRESS", "POLYMARKET_TOKEN_ID",
+    "MAX_POSITION_SIZE", "MAX_DAILY_LOSS", "MAX_OPEN_POSITIONS",
+    "DRY_RUN", "LOG_LEVEL", "CORS_ORIGINS",
+    "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+    "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "ALERT_EMAIL_TO",
+    "ALERT_LOSS_THRESHOLD", "ALERT_GAIN_THRESHOLD",
+    "ALERT_DAILY_LOSS_THRESHOLD", "ALERT_DAILY_GAIN_THRESHOLD",
+    "COPYTRADE_MIN_TRADES", "COPYTRADE_MIN_WIN_RATE", "COPYTRADE_TOP_N",
+    "COPYTRADE_SCAN_INTERVAL", "COPYTRADE_RESCORE_INTERVAL",
+    "AUTH_USERNAME", "AUTH_PASSWORD",
+]
+
+
+def _read_env() -> dict[str, str]:
+    """Read .env file into a dict."""
+    env_path = Path(__file__).parent.parent / ".env"
+    values = {}
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            values[key.strip()] = val.strip()
+    return values
+
+
+def _write_env(updates: dict[str, str]) -> None:
+    """Update specific keys in the .env file, preserving structure."""
+    env_path = Path(__file__).parent.parent / ".env"
+    if not env_path.exists():
+        return
+    lines = env_path.read_text(encoding="utf-8").splitlines()
+    updated_keys = set()
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in updates:
+                new_lines.append(f"{key}={updates[key]}")
+                updated_keys.add(key)
+                continue
+        new_lines.append(line)
+    # Add any new keys not already in the file
+    for key, val in updates.items():
+        if key not in updated_keys:
+            new_lines.append(f"{key}={val}")
+    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+
+@app.get("/api/config")
+async def get_config():
+    """Read all configurable .env values (sensitive keys masked)."""
+    values = _read_env()
+    result = {}
+    for key in _CONFIG_KEYS:
+        val = values.get(key, "")
+        if key in _SENSITIVE_KEYS and val:
+            result[key] = val[:3] + "*" * (len(val) - 3)
+        else:
+            result[key] = val
+    return result
+
+
+@app.put("/api/config")
+async def update_config(request: Request):
+    """Update .env values. Empty strings and masked values (***) are ignored."""
+    body = await request.json()
+    updates = {}
+    current = _read_env()
+    for key, val in body.items():
+        if key not in _CONFIG_KEYS:
+            continue
+        val = str(val).strip()
+        # Skip masked values (unchanged sensitive fields)
+        if "*" in val:
+            continue
+        # Allow clearing non-sensitive fields
+        if val != current.get(key, ""):
+            updates[key] = val
+    if updates:
+        _write_env(updates)
+    return {"updated": list(updates.keys()), "restart_required": bool(updates)}
+
+
 # ========== Entry point ==========
 
 if __name__ == "__main__":
