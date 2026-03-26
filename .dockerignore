@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.env
+data/*.db
+data/*.csv
+logs/
+*.log
+.claude/
+.pytest_cache/
+nginx/
+scripts/

@@ -1,0 +1,27 @@
+# Docker Compose - Polymarket Trading Bot
+# URL: trading.youpiare.fr (port 8818 interne, 443 via reverse proxy)
+
+services:
+  trading-bot:
+    build: .
+    container_name: trading_bot
+    ports:
+      - "8818:1818"
+    volumes:
+      # SQLite persistence
+      - trading_data:/app/data
+      # Logs persistence
+      - trading_logs:/app/logs
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; r=requests.get('http://localhost:1818/api/bots'); exit(0 if r.ok else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  trading_data:
+  trading_logs:
