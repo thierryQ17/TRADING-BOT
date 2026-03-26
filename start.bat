@@ -11,6 +11,13 @@ echo    Polymarket RBI Bot - Launcher
 echo  ============================================
 echo.
 
+:: Kill any existing instance on port 1818
+echo  [..] Verification des processus existants...
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":1818 "') do (
+    echo  [OK] Arret du processus existant (PID %%p)
+    taskkill /PID %%p /F >nul 2>&1
+)
+
 :: Check Python
 where python >nul 2>&1
 if errorlevel 1 (

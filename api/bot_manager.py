@@ -167,32 +167,54 @@ class BotManager:
         bot.running = True
         bot.started_at = datetime.now(timezone.utc).isoformat()
 
+        is_demo = resolved_token_id == "demo"
+
         def _run():
-            """Trading loop — fetches live data via ccxt and runs strategy."""
-            logger.info("Bot %s started (token: %s)", key, resolved_token_id[:16])
-            interval = 30  # seconds between cycles
+            """Trading loop — demo mode or live data via ccxt."""
+            logger.info("Bot %s started (%s)", key, "demo" if is_demo else resolved_token_id[:16])
 
-            try:
-                downloader = OHLCVDownloader()
-
-                def fetch_data():
-                    return downloader.fetch(symbol="BTC/USDT", timeframe="5m", days_back=1)
-
+            if is_demo:
+                # Demo mode: simulated trades for dashboard preview
+                random.seed(time.time() + hash(key))
                 while bot.running:
                     try:
-                        df = fetch_data()
-                        if df is not None and not df.empty:
-                            trader.execute_once(df)
-                        else:
-                            logger.warning("Bot %s: no data, retrying...", key)
-                        time.sleep(interval)
+                        if random.random() < 0.5:
+                            side = "BUY" if random.random() > 0.45 else "SELL"
+                            price = round(0.3 + random.random() * 0.5, 4)
+                            size = self._settings["position_size"]
+                            pnl = round((random.random() - 0.4) * size * 0.15, 4)
+                            with self._lock:
+                                bot.record_trade(side, price, size, pnl)
+                                self.risk_manager.on_trade_opened()
+                                self.risk_manager.on_trade_closed(pnl)
+                        time.sleep(2)
                     except Exception as e:
-                        logger.error("Bot %s cycle error: %s", key, e)
-                        time.sleep(interval)
-            except Exception as e:
-                logger.error("Bot %s fatal error: %s", key, e)
-            finally:
-                logger.info("Bot %s stopped", key)
+                        logger.error("Bot %s error: %s", key, e)
+                        time.sleep(2)
+            else:
+                # Live mode: fetch real data via ccxt
+                interval = 30
+                try:
+                    downloader = OHLCVDownloader()
+
+                    def fetch_data():
+                        return downloader.fetch(symbol="BTC/USDT", timeframe="5m", days_back=1)
+
+                    while bot.running:
+                        try:
+                            df = fetch_data()
+                            if df is not None and not df.empty:
+                                trader.execute_once(df)
+                            else:
+                                logger.warning("Bot %s: no data, retrying...", key)
+                            time.sleep(interval)
+                        except Exception as e:
+                            logger.error("Bot %s cycle error: %s", key, e)
+                            time.sleep(interval)
+                except Exception as e:
+                    logger.error("Bot %s fatal error: %s", key, e)
+
+            logger.info("Bot %s stopped", key)
 
         thread = threading.Thread(target=_run, daemon=True, name=f"bot-{key}")
         bot.thread = thread
