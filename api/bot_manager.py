@@ -17,6 +17,7 @@ from data.downloader import OHLCVDownloader
 from bot.trader import Trader
 from bot.risk_manager import RiskManager
 from incubation.alerter import Alerter
+from incubation.logger import setup_logging, log_trade_event
 from strategies.macd_strategy import MACDStrategy
 from strategies.rsi_mean_reversion import RSIMeanReversionStrategy
 from strategies.cvd_strategy import CVDStrategy
@@ -123,6 +124,11 @@ class BotManager:
             "account": "account_1",
         }
         self._lock = threading.Lock()
+        self._logs: list[dict] = []
+        self._max_logs = 200
+
+        # Setup file logging
+        setup_logging("bot_manager")
 
     def start_bot(self, key: str, token_id: str = "") -> dict:
         """Start a bot in a background thread.
@@ -171,6 +177,8 @@ class BotManager:
                 if pnl != 0:
                     self.risk_manager.on_trade_closed(pnl)
                     strategy_name = STRATEGY_META[key]["name"]
+                    pnl_str = f"+${pnl:.4f}" if pnl >= 0 else f"-${abs(pnl):.4f}"
+                    self._log_event("TRADE", key, f"{side} @ {price:.4f} | PnL: {pnl_str}")
                     self.alerter.check_trade(strategy_name, side, price, size, pnl)
                     self.alerter.check_daily_pnl(self.risk_manager.daily_pnl)
                 else:
@@ -181,6 +189,7 @@ class BotManager:
         bot.trader = trader
         bot.running = True
         bot.started_at = datetime.now(timezone.utc).isoformat()
+        self._log_event("INFO", key, f"Bot demarre ({('demo' if resolved_token_id == 'demo' else 'live')})")
 
         is_demo = resolved_token_id == "demo"
 
@@ -210,6 +219,7 @@ class BotManager:
                         time.sleep(2)
                     except Exception as e:
                         logger.error("Bot %s error: %s", key, e)
+                        self._log_event("ERROR", key, str(e))
                         time.sleep(2)
 
             elif key == "copytrade":
@@ -283,6 +293,7 @@ class BotManager:
             bot.thread.join(timeout=10)
             bot.thread = None
         bot.started_at = None
+        self._log_event("INFO", key, "Bot arrete")
         return {"status": "stopped", "bot": key}
 
     def kill_all(self) -> dict:
@@ -292,6 +303,7 @@ class BotManager:
                 self.bots[key].running = False
                 stopped.append(key)
         if stopped:
+            self._log_event("WARN", "system", f"KILL ALL — bots arretes: {', '.join(stopped)}")
             self.alerter.notify_kill_all(stopped)
         # Join all threads after setting flags
         for key in stopped:
@@ -375,3 +387,24 @@ class BotManager:
         self.risk_manager.max_open_positions = settings.runtime.max_open_positions
         self.risk_manager.stop_loss_pct = settings.runtime.stop_loss_pct
         return self._settings
+
+    def _log_event(self, level: str, source: str, message: str) -> None:
+        """Add a log entry to the in-memory buffer and file."""
+        entry = {
+            "time": datetime.now(timezone.utc).isoformat(),
+            "level": level,
+            "source": source,
+            "message": message,
+        }
+        with self._lock:
+            self._logs.append(entry)
+            if len(self._logs) > self._max_logs:
+                self._logs = self._logs[-self._max_logs:]
+        log_trade_event("system", entry)
+
+    def get_logs(self, limit: int = 100, level: str = "") -> list[dict]:
+        """Return recent logs, optionally filtered by level."""
+        logs = list(self._logs)
+        if level:
+            logs = [l for l in logs if l["level"] == level.upper()]
+        return logs[-limit:]

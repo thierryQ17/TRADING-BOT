@@ -112,6 +112,13 @@ async def get_risk():
     return manager.get_risk()
 
 
+# --- Logs ---
+
+@app.get("/api/logs")
+async def get_logs(limit: int = 100, level: str = ""):
+    return manager.get_logs(limit=limit, level=level)
+
+
 # --- Alerts ---
 
 @app.get("/api/alerts/status")
