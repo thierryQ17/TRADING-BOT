@@ -357,11 +357,9 @@ tr:hover td { background: var(--bg-2); }
     <div class="tab-bar">
       <button class="tab-btn active" id="tabDashboard" onclick="switchTab('dashboard')">Dashboard</button>
       <button class="tab-btn" id="tabConfig" onclick="switchTab('config')">Configuration</button>
+      <button class="tab-btn" id="tabDocs" onclick="switchTab('docs')">Documentation</button>
+      <button class="tab-btn" id="tabAudit" onclick="switchTab('audit')">Audit</button>
     </div>
-    <a href="/static/guide.html" target="_blank" style="font-size:11px;color:var(--green);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Guide</a>
-    <a href="/static/docs.html" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Docs</a>
-    <a href="/static/audit.html" target="_blank" style="font-size:11px;color:#ff8c38;text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Audit</a>
-    <a href="/docs" target="_blank" style="font-size:11px;color:var(--text-2);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">API</a>
     <a href="https://polymarket.com" target="_blank" style="font-size:11px;color:var(--purple);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:10px;font-family:var(--font-mono);">Polymarket</a>
     <div class="conn-status ok" id="connStatus">API Connected</div>
     <div class="header-time"><span id="clock">--:--:--</span></div>
@@ -559,6 +557,29 @@ tr:hover td { background: var(--bg-2); }
     </div>
 
 </div><!-- /viewConfig -->
+
+<div id="viewDocs" style="display:none;">
+  <div class="panel" style="padding:0;overflow:hidden;">
+    <div class="panel-header" style="padding:12px 16px;">
+      <div class="panel-title">Documentation</div>
+      <div style="display:flex;gap:8px;">
+        <button class="settings-toggle" onclick="loadDocFrame('guide')" id="docBtnGuide">Guide</button>
+        <button class="settings-toggle" onclick="loadDocFrame('docs')" id="docBtnDocs">Docs</button>
+        <button class="settings-toggle" onclick="loadDocFrame('api')" id="docBtnApi">API</button>
+      </div>
+    </div>
+    <iframe id="docFrame" src="/static/guide.html" style="width:100%;height:calc(100vh - 160px);border:none;"></iframe>
+  </div>
+</div><!-- /viewDocs -->
+
+<div id="viewAudit" style="display:none;">
+  <div class="panel" style="padding:0;overflow:hidden;">
+    <div class="panel-header" style="padding:12px 16px;">
+      <div class="panel-title">Audit</div>
+    </div>
+    <iframe src="/static/audit.html" style="width:100%;height:calc(100vh - 160px);border:none;"></iframe>
+  </div>
+</div><!-- /viewAudit -->
 
 </main>
 
@@ -1191,13 +1212,25 @@ async function refreshLogs() {
 }
 
 // ========== TABS ==========
+const TABS = ['dashboard', 'config', 'docs', 'audit'];
 function switchTab(tab) {
-  document.getElementById('viewDashboard').style.display = tab === 'dashboard' ? '' : 'none';
-  document.getElementById('viewConfig').style.display = tab === 'config' ? '' : 'none';
-  document.getElementById('tabDashboard').className = 'tab-btn' + (tab === 'dashboard' ? ' active' : '');
-  document.getElementById('tabConfig').className = 'tab-btn' + (tab === 'config' ? ' active' : '');
+  TABS.forEach(t => {
+    const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (view) view.style.display = t === tab ? '' : 'none';
+    if (btn) btn.className = 'tab-btn' + (t === tab ? ' active' : '');
+  });
   if (tab === 'config') loadConfig();
   window.scrollTo(0, 0);
+}
+
+function loadDocFrame(page) {
+  const urls = { guide: '/static/guide.html', docs: '/static/docs.html', api: '/docs' };
+  document.getElementById('docFrame').src = urls[page] || urls.guide;
+  ['Guide','Docs','Api'].forEach(b => {
+    const el = document.getElementById('docBtn' + b);
+    if (el) el.style.fontWeight = b.toLowerCase() === page ? '700' : '400';
+  });
 }
 
 // ========== CONFIGURATION ==========
