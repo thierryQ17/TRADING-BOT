@@ -472,14 +472,6 @@ tr:hover td { background: var(--bg-2); }
               <span class="dry-run-label" id="dryRunLabel">Simulation</span>
             </div>
           </div>
-          <div class="setting-group">
-            <label title="Compte Polymarket utilise pour les transactions">Compte</label>
-            <select class="setting-input" id="settingAccount" onchange="onSettingChange()">
-              <option value="account_1">compte_1 (MACD)</option>
-              <option value="account_2">compte_2 (RSI)</option>
-              <option value="account_3">compte_3 (CVD)</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
@@ -1015,7 +1007,6 @@ async function onSettingChange() {
     take_profit_pct: parseFloat(document.getElementById('settingTP').value),
     trailing_tp_activation: parseFloat(document.getElementById('settingTrailAct').value),
     trailing_tp_distance: parseFloat(document.getElementById('settingTrailDist').value),
-    account: document.getElementById('settingAccount').value,
   });
 }
 
@@ -1029,7 +1020,6 @@ async function loadSettings() {
   document.getElementById('settingTP').value = s.take_profit_pct;
   document.getElementById('settingTrailAct').value = s.trailing_tp_activation || 30;
   document.getElementById('settingTrailDist').value = s.trailing_tp_distance || 15;
-  document.getElementById('settingAccount').value = s.account;
 
   // Trailing toggle
   const trailToggle = document.getElementById('trailingToggle');
