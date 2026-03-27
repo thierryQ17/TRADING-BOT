@@ -66,7 +66,7 @@ class BotState:
             return 0.0
         return self.win_count / self.total_trades
 
-    def record_trade(self, side: str, price: float, size: float, pnl: float, token_id: str = ""):
+    def record_trade(self, side: str, price: float, size: float, pnl: float, token_id: str = "", reason: str = ""):
         trade = {
             "time": datetime.now(timezone.utc).isoformat(),
             "strategy": STRATEGY_META[self.strategy_key]["name"],
@@ -75,6 +75,7 @@ class BotState:
             "size": size,
             "pnl": round(pnl, 4),
             "status": "filled",
+            "reason": reason,
         }
         self.trades.append(trade)
         self.total_pnl += pnl
@@ -121,9 +122,15 @@ class BotManager:
             "position_size": settings.runtime.default_position_size,
             "stop_loss_pct": settings.runtime.stop_loss_pct * 100,
             "take_profit_pct": settings.runtime.take_profit_pct * 100,
+            "risk_per_trade_pct": settings.runtime.risk_per_trade_pct * 100,
+            "trailing_tp_enabled": settings.runtime.trailing_tp_enabled,
+            "trailing_tp_activation": settings.runtime.trailing_tp_activation * 100,
+            "trailing_tp_distance": settings.runtime.trailing_tp_distance * 100,
             "dry_run": settings.runtime.dry_run,
             "account": "account_1",
         }
+        self._scalers: dict[str, Scaler] = {}  # per-bot scalers
+        self._cached_balance: float = 0.0
         self._lock = threading.Lock()
         self._logs: list[dict] = []
         self._max_logs = 200
@@ -164,6 +171,7 @@ class BotManager:
                 return {"error": f"Connection failed: {e}"}
 
         scaler = Scaler(alerter=self.alerter)
+        self._scalers[key] = scaler
 
         trader = Trader(
             strategy=strategy,
@@ -175,14 +183,16 @@ class BotManager:
         )
 
         # Bridge trader events to BotState
-        def on_trade(side: str, price: float, size: float, pnl: float):
+        def on_trade(side: str, price: float, size: float, pnl: float, reason: str = ""):
             with self._lock:
-                bot.record_trade(side, price, size, pnl)
+                bot.record_trade(side, price, size, pnl, reason=reason)
                 if pnl != 0:
                     self.risk_manager.on_trade_closed(pnl)
                     strategy_name = STRATEGY_META[key]["name"]
                     pnl_str = f"+${pnl:.4f}" if pnl >= 0 else f"-${abs(pnl):.4f}"
-                    self._log_event("TRADE", key, f"{side} @ {price:.4f} | PnL: {pnl_str}")
+                    reason_label = {"stop-loss": "SL", "take-profit": "TP", "trailing-tp": "TRL"}.get(reason, "")
+                    reason_tag = f" [{reason_label}]" if reason_label else ""
+                    self._log_event("TRADE", key, f"{side} @ {price:.4f} | PnL: {pnl_str}{reason_tag}")
                     self.alerter.check_trade(strategy_name, side, price, size, pnl)
                     self.alerter.check_daily_pnl(self.risk_manager.daily_pnl)
                 else:
@@ -361,6 +371,26 @@ class BotManager:
         max_pos = self.risk_manager.max_open_positions
         running_bots = [k for k, b in self.bots.items() if b.running]
 
+        # Scaler info per bot
+        scalers = {}
+        for key, scaler in self._scalers.items():
+            scalers[key] = {
+                "level": scaler.level + 1,
+                "max_level": len(scaler.SCALING_LADDER) if hasattr(scaler, 'SCALING_LADDER') else 5,
+                "current_size": scaler.current_size,
+                "trades_at_level": scaler._trades_at_level,
+                "wins_at_level": scaler._wins_at_level,
+                "consecutive_losses": scaler._consecutive_losses,
+            }
+
+        # Get cached balance from any running trader
+        balance = self._cached_balance
+        for bot in self.bots.values():
+            if bot.trader and bot.trader._cached_capital > 0:
+                balance = bot.trader._cached_capital
+                self._cached_balance = balance
+                break
+
         return {
             "daily_pnl": round(daily_pnl, 2),
             "max_daily_loss": max_loss,
@@ -369,6 +399,12 @@ class BotManager:
             "max_positions": max_pos,
             "position_size": self._settings["position_size"],
             "running_bots": running_bots,
+            "risk_per_trade_pct": self._settings["risk_per_trade_pct"],
+            "trailing_tp_enabled": self._settings["trailing_tp_enabled"],
+            "trailing_tp_activation": self._settings["trailing_tp_activation"],
+            "trailing_tp_distance": self._settings["trailing_tp_distance"],
+            "balance": round(balance, 2),
+            "scalers": scalers,
         }
 
     def get_settings(self) -> dict:
@@ -384,12 +420,18 @@ class BotManager:
             default_position_size=self._settings["position_size"],
             stop_loss_pct=self._settings["stop_loss_pct"] / 100,
             take_profit_pct=self._settings["take_profit_pct"] / 100,
+            risk_per_trade_pct=self._settings["risk_per_trade_pct"] / 100,
+            trailing_tp_enabled=self._settings["trailing_tp_enabled"],
+            trailing_tp_activation=self._settings["trailing_tp_activation"] / 100,
+            trailing_tp_distance=self._settings["trailing_tp_distance"] / 100,
         )
         # Sync risk manager with new values
         self.risk_manager.max_position_size = settings.runtime.max_position_size
         self.risk_manager.max_daily_loss = settings.runtime.max_daily_loss
         self.risk_manager.max_open_positions = settings.runtime.max_open_positions
         self.risk_manager.stop_loss_pct = settings.runtime.stop_loss_pct
+        self.risk_manager.take_profit_pct = settings.runtime.take_profit_pct
+        self.risk_manager.risk_per_trade_pct = settings.runtime.risk_per_trade_pct
         return self._settings
 
     def _log_event(self, level: str, source: str, message: str) -> None:

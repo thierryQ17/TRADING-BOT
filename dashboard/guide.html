@@ -224,8 +224,8 @@ code {
 
   <div class="vocab">
     <div class="vocab-item">
-      <span class="vocab-word">Trade</span>
-      <span class="vocab-def">Un achat ou une vente fait par le robot</span>
+      <span class="vocab-word">Transaction</span>
+      <span class="vocab-def">Un achat ou une vente fait automatiquement par le robot</span>
     </div>
     <div class="vocab-item">
       <span class="vocab-word">BUY</span>
@@ -241,15 +241,15 @@ code {
     </div>
     <div class="vocab-item">
       <span class="vocab-word">Taux reussite</span>
-      <span class="vocab-def">Sur 100 trades, combien sont gagnants. 60% = 60 gagnants.</span>
+      <span class="vocab-def">Sur 100 transactions, combien sont gagnantes. 60% = 60 gagnantes.</span>
     </div>
     <div class="vocab-item">
       <span class="vocab-word">Stop Loss</span>
-      <span class="vocab-def">Filet de securite. Ferme un trade qui perd trop.</span>
+      <span class="vocab-def">Filet de securite. Ferme une transaction qui perd trop.</span>
     </div>
     <div class="vocab-item">
       <span class="vocab-word">Take Profit</span>
-      <span class="vocab-def">Encaisse automatiquement quand un trade gagne assez.</span>
+      <span class="vocab-def">Encaisse automatiquement quand une transaction gagne assez.</span>
     </div>
     <div class="vocab-item">
       <span class="vocab-word">Simulation</span>
@@ -292,11 +292,11 @@ code {
     <thead><tr><th>Zone</th><th>C'est quoi</th></tr></thead>
     <tbody>
       <tr><td><strong>Barre du haut</strong></td><td>Le mode (Simulation ou Live), l'heure, les liens vers le guide et la doc</td></tr>
-      <tr><td><strong>3 cartes</strong></td><td>Tes 3 robots. Chacun a un interrupteur, des chiffres et un mini-graphique</td></tr>
-      <tr><td><strong>4 chiffres</strong></td><td>Le resume : gain total, meilleur robot, nombre de trades, note</td></tr>
-      <tr><td><strong>Graphiques</strong></td><td>A gauche : ton capital qui monte ou descend. A droite : comparaison des 3 robots</td></tr>
-      <tr><td><strong>Gestion des risques</strong></td><td>Combien tu as perdu aujourd'hui, quels robots tournent, bouton d'urgence rouge</td></tr>
-      <tr><td><strong>Bas de page</strong></td><td>A gauche : liste des trades. A droite : les reglages</td></tr>
+      <tr><td><strong>4 cartes</strong></td><td>Tes 4 robots (MACD, RSI, CVD, Copy Trading). Chacun a un interrupteur, des chiffres et un mini-graphique</td></tr>
+      <tr><td><strong>4 chiffres</strong></td><td>Le resume : gain total, meilleur robot, nombre de transactions, note Sharpe</td></tr>
+      <tr><td><strong>Graphiques</strong></td><td>A gauche : ton capital qui monte ou descend. A droite : comparaison des robots</td></tr>
+      <tr><td><strong>Gestion des risques</strong></td><td>Perte du jour, robots actifs, taille par bot, bouton d'urgence. <strong>En dessous :</strong> solde USDC, niveau d'incubation, etat du trailing TP</td></tr>
+      <tr><td><strong>Bas de page</strong></td><td>A gauche : journal des transactions (avec la raison de cloture). A droite : les reglages (risque %, SL, TP, trailing, mode)</td></tr>
     </tbody>
   </table>
 
@@ -314,7 +314,7 @@ code {
     <li><div class="num">1</div><div>Verifie que le badge en haut dit <strong>"Simulation"</strong> (jaune)</div></li>
     <li><div class="num">2</div><div>Sur la carte <strong>MACD</strong>, clique sur le <strong>rond gris</strong> a droite</div></li>
     <li><div class="num">3</div><div>Il devient <strong style="color:var(--green)">vert</strong> = le robot tourne !</div></li>
-    <li><div class="num">4</div><div>Attends quelques secondes, des trades apparaissent dans la liste en bas</div></li>
+    <li><div class="num">4</div><div>Attends quelques secondes, des transactions apparaissent dans la liste en bas</div></li>
   </ol>
 
   <div class="tip green">
@@ -348,9 +348,13 @@ code {
   <table class="tbl">
     <thead><tr><th>Reglage</th><th>C'est quoi</th><th>Conseil</th></tr></thead>
     <tbody>
-      <tr><td><strong>Taille</strong></td><td>Combien de $ par trade</td><td>Laisse a <strong>$1</strong></td></tr>
-      <tr><td><strong>Stop Loss</strong></td><td>Ferme un trade qui perd trop</td><td>Laisse a <strong>5%</strong></td></tr>
+      <tr><td><strong>Taille</strong></td><td>Combien de $ par transaction</td><td>Laisse a <strong>$1</strong></td></tr>
+      <tr><td><strong>Risque %</strong></td><td>% du capital risque par transaction</td><td>Laisse a <strong>1%</strong></td></tr>
+      <tr><td><strong>Stop Loss</strong></td><td>Ferme une transaction qui perd trop</td><td>Laisse a <strong>5%</strong></td></tr>
       <tr><td><strong>Take Profit</strong></td><td>Encaisse quand ca gagne assez</td><td>Laisse a <strong>10%</strong></td></tr>
+      <tr><td><strong>Trailing TP</strong></td><td>TP dynamique qui suit le prix</td><td>Laisse <strong>desactive</strong> au debut</td></tr>
+      <tr><td><strong>Activation %</strong></td><td>Gain minimum pour activer le trailing</td><td><strong>30%</strong> (visible si trailing actif)</td></tr>
+      <tr><td><strong>Distance %</strong></td><td>Recul depuis le sommet pour vendre</td><td><strong>15%</strong> (visible si trailing actif)</td></tr>
       <tr><td><strong>Mode</strong></td><td>Simulation ou argent reel</td><td>Reste en <strong>Simulation</strong></td></tr>
       <tr><td><strong>Compte</strong></td><td>Quel portefeuille utiliser</td><td>Pas important en simulation</td></tr>
     </tbody>
@@ -364,25 +368,38 @@ code {
 <!-- ==================== ETAPE 8 ==================== -->
 <div class="step">
   <div class="step-badge purple">Etape 8</div>
-  <h2>Lire la liste des trades</h2>
+  <h2>Lire le journal des transactions</h2>
 
   <p>Le tableau en bas a gauche montre tout ce que les robots ont fait :</p>
 
   <table class="tbl">
     <thead><tr><th>Colonne</th><th>Ca veut dire</th></tr></thead>
     <tbody>
-      <tr><td><strong>Heure</strong></td><td>Quand le trade a eu lieu</td></tr>
+      <tr><td><strong>Heure</strong></td><td>Quand la transaction a eu lieu</td></tr>
       <tr><td><strong>Strategie</strong></td><td>Quel robot l'a fait</td></tr>
       <tr><td><strong style="color:var(--green)">BUY</strong> / <strong style="color:var(--red)">SELL</strong></td><td>Achat ou vente</td></tr>
       <tr><td><strong>Prix</strong></td><td>A quel prix</td></tr>
       <tr><td><strong>Taille</strong></td><td>Combien de $</td></tr>
       <tr><td><strong style="color:var(--green)">+$0.05</strong></td><td>Tu as gagne 5 centimes</td></tr>
       <tr><td><strong style="color:var(--red)">-$0.03</strong></td><td>Tu as perdu 3 centimes</td></tr>
+      <tr><td><strong>Raison</strong></td><td>Ce qui a declenche la cloture (voir ci-dessous)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Colonne "Raison" — les declencheurs</h3>
+  <table class="tbl">
+    <thead><tr><th>Etiquette</th><th>Couleur</th><th>Signification</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Signal</strong></td><td style="color:var(--blue)">Bleu</td><td>Ouverture normale sur signal de la strategie</td></tr>
+      <tr><td><strong>Retournement</strong></td><td style="color:var(--amber)">Orange</td><td>La strategie a change d'avis (BUY → SELL ou inversement)</td></tr>
+      <tr><td><strong>Stop-Loss</strong></td><td style="color:var(--red)">Rouge</td><td>Fermeture automatique — la perte a atteint le seuil</td></tr>
+      <tr><td><strong>Take-Profit</strong></td><td style="color:var(--green)">Vert</td><td>Fermeture automatique — le gain a atteint le seuil</td></tr>
+      <tr><td><strong>Trailing TP</strong></td><td style="color:var(--purple)">Violet</td><td>Le trailing a detecte un recul depuis le sommet</td></tr>
     </tbody>
   </table>
 
   <div class="tip blue">
-    <strong>Astuce :</strong> Clique sur le titre d'une colonne pour trier. Clique sur "PnL" pour voir les meilleurs trades en premier.
+    <strong>Astuce :</strong> Clique sur le titre d'une colonne pour trier. Clique sur "Raison" pour regrouper par type de declencheur.
   </div>
 </div>
 

@@ -218,6 +218,10 @@ class SettingsUpdate(BaseModel):
     position_size: float | None = Field(None, gt=0, le=1000, description="Position size in USD")
     stop_loss_pct: float | None = Field(None, gt=0, le=100, description="Stop loss percentage (1-100)")
     take_profit_pct: float | None = Field(None, gt=0, le=100, description="Take profit percentage (1-100)")
+    risk_per_trade_pct: float | None = Field(None, gt=0, le=10, description="Risk per trade percentage (0.5-10)")
+    trailing_tp_enabled: bool | None = None
+    trailing_tp_activation: float | None = Field(None, gt=0, le=100, description="Trailing TP activation percentage")
+    trailing_tp_distance: float | None = Field(None, gt=0, le=100, description="Trailing TP distance percentage")
     dry_run: bool | None = None
     account: str | None = Field(None, min_length=1, max_length=50)
 

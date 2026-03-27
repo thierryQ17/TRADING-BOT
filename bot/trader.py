@@ -43,8 +43,8 @@ class Trader:
         self._running = False
         self._cached_capital: float = 0.0
 
-        # Callback for trade events: on_trade(side, price, size, pnl)
-        self.on_trade: Optional[Callable[[str, float, float, float], None]] = None
+        # Callback for trade events: on_trade(side, price, size, pnl, reason)
+        self.on_trade: Optional[Callable[[str, float, float, float, str], None]] = None
 
     def _close_position(self, price: float, reason: str) -> None:
         """Close the current position and record the trade."""
@@ -72,7 +72,7 @@ class Trader:
             )
             logger.info("Position closed (%s): %s @ %.4f -> PnL $%.4f", reason, exit_side, price, pnl)
             if self.on_trade:
-                self.on_trade(exit_side, price, pos.size, pnl)
+                self.on_trade(exit_side, price, pos.size, pnl, reason)
 
     def _get_dynamic_size(self, price: float) -> float:
         """Calculate position size from risk %, capital, and stop-loss."""
@@ -180,7 +180,7 @@ class Trader:
                 side, trade_size, price,
             )
             if self.on_trade:
-                self.on_trade(side, price, trade_size, 0.0)
+                self.on_trade(side, price, trade_size, 0.0, "signal")
 
     def _refresh_capital(self) -> None:
         """Fetch wallet balance for risk-based position sizing."""
