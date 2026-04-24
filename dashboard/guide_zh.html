@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新手教程 — Polymarket RBI 交易机器人</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --text-light: #4a5568;
+  --text-muted: #a0aec0;
+  --blue: #3182ce;
+  --green: #0d9f4f;
+  --red: #e53e3e;
+  --amber: #d69e2e;
+  --purple: #7c3aed;
+  --cyan: #0891b2;
+  --font: 'Instrument Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.8; }
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: white; font-size: 15px;
+}
+.nav-title { font-weight: 700; font-size: 16px; }
+.nav-links { display: flex; gap: 8px; }
+.nav-links a {
+  padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  text-decoration: none; color: var(--text-light); font-weight: 500;
+}
+.nav-links a:hover { background: var(--bg); }
+.nav-links a.active { background: var(--blue); color: white; }
+.container { max-width: 1060px; margin: 0 auto; padding: 40px 24px 80px; display: flex; gap: 32px; }
+.sidebar {
+  position: sticky; top: 70px; align-self: flex-start;
+  width: 220px; min-width: 220px; max-height: calc(100vh - 90px);
+  overflow-y: auto; padding: 16px 0;
+}
+.sidebar-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-muted); padding: 0 12px 10px;
+}
+.sidebar-section { margin-bottom: 16px; }
+.sidebar-section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-muted); padding: 12px 12px 6px;
+  border-top: 1px solid var(--border);
+}
+.sidebar a {
+  display: block; padding: 5px 12px; font-size: 12.5px; line-height: 1.4;
+  text-decoration: none; color: var(--text-light); border-radius: 6px;
+  border-left: 3px solid transparent; transition: all 0.15s;
+}
+.sidebar a:hover { background: var(--bg); color: var(--text); }
+.sidebar a.active { background: #ebf8ff; border-left-color: var(--blue); color: var(--blue); font-weight: 600; }
+.content { flex: 1; min-width: 0; }
+.hero { text-align: center; padding: 40px 0 48px; }
+.hero h1 { font-size: 34px; font-weight: 700; letter-spacing: -1px; margin-bottom: 10px; }
+.hero p { font-size: 17px; color: var(--text-light); }
+.step {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px 28px 24px;
+  margin-bottom: 24px; position: relative; scroll-margin-top: 80px;
+}
+.step-badge {
+  position: absolute; top: -12px; left: 24px;
+  background: var(--blue); color: white; font-size: 12px; font-weight: 700;
+  padding: 4px 14px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.step-badge.green { background: var(--green); }
+.step-badge.purple { background: var(--purple); }
+.step-badge.red { background: var(--red); }
+.step-badge.amber { background: var(--amber); }
+.step-badge.cyan { background: var(--cyan); }
+.step h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; margin-top: 4px; }
+.step p { color: var(--text-light); font-size: 15px; margin-bottom: 14px; }
+.step strong { color: var(--text); }
+.step h3 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; color: var(--text); }
+.tip { padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 14px; }
+.tip.blue { background: #ebf8ff; border-left: 4px solid var(--blue); color: #2b6cb0; }
+.tip.green { background: #f0fff4; border-left: 4px solid var(--green); color: #276749; }
+.tip.red { background: #fff5f5; border-left: 4px solid var(--red); color: #c53030; }
+.tip.amber { background: #fffff0; border-left: 4px solid var(--amber); color: #975a16; }
+.vocab {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; margin: 16px 0;
+}
+.vocab-item { display: flex; gap: 8px; margin-bottom: 10px; font-size: 14px; }
+.vocab-item:last-child { margin-bottom: 0; }
+.vocab-word { font-weight: 700; color: var(--blue); white-space: nowrap; font-family: var(--mono); font-size: 13px; min-width: 120px; }
+.vocab-def { color: var(--text-light); }
+.actions { list-style: none; margin: 12px 0; padding: 0; }
+.actions li {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px; color: var(--text-light);
+}
+.actions li:last-child { border-bottom: none; }
+.num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--blue); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+.tbl th {
+  text-align: left; padding: 10px 12px; background: var(--bg);
+  border-bottom: 2px solid var(--border); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+}
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-light); }
+code {
+  font-family: var(--mono); font-size: 13px; background: var(--bg);
+  padding: 2px 6px; border-radius: 4px; color: var(--purple);
+}
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
+.footer { text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 13px; }
+.footer a { color: var(--blue); text-decoration: none; }
+@media (max-width: 900px) { .sidebar { display: none; } .container { max-width: 760px; padding: 20px 16px 60px; } }
+@media (max-width: 600px) { .container { padding: 20px 16px 60px; } .hero h1 { font-size: 24px; } .step { padding: 20px; } .vocab-word { min-width: 80px; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-left">
+    <div class="nav-logo">R</div>
+    <span class="nav-title">新手教程</span>
+  </div>
+  <div class="nav-links">
+    <a href="/">仪表板</a>
+    <a href="/static/docs_zh.html">文档</a>
+    <a href="/static/guide_zh.html" class="active">教程</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<nav class="sidebar">
+  <div class="sidebar-title">目录</div>
+  <div class="sidebar-section">
+    <a href="#etape1">1. 这是什么？</a>
+    <a href="#etape2">2. 术语表</a>
+    <a href="#etape3">3. 启动平台</a>
+    <a href="#etape4">4. 认识界面</a>
+    <a href="#etape5">5. 第一个机器人</a>
+    <a href="#etape6">6. 启动 3 个机器人</a>
+    <a href="#etape7">7. 参数设置</a>
+    <a href="#etape8">8. 交易日志</a>
+    <a href="#etape9">9. 真实资金</a>
+    <a href="#etape10">10. .env 文件</a>
+    <a href="#etape11">11. Token ID</a>
+    <a href="#etape12">12. 实盘模式</a>
+    <a href="#etape13">13. 进阶路线</a>
+    <a href="#etape14">14. 每日监控</a>
+    <a href="#etape15">15. 十大铁律</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">风险管理</div>
+    <a href="#risk-percent">1-2% 规则</a>
+    <a href="#stop-loss">止损</a>
+    <a href="#take-profit">止盈</a>
+    <a href="#trailing-tp">移动止盈</a>
+    <a href="#dynamic-sizing">动态仓位</a>
+    <a href="#incubation">孵化（缩放器）</a>
+    <a href="#recap-risk">总结</a>
+  </div>
+</nav>
+
+<div class="content">
+
+<div class="hero">
+  <h1>如何使用你的交易机器人</h1>
+  <p>每一步都有简单说明。按顺序阅读即可。</p>
+</div>
+
+<!-- 步骤 1 -->
+<div class="step" id="etape1">
+  <div class="step-badge">步骤 1</div>
+  <h2>这是什么？</h2>
+  <p>这是一个<strong>自动交易机器人</strong>，在 <strong>Polymarket</strong>（一个预测市场平台）上自动买卖。</p>
+  <p>你有<strong>3 个</strong>不同的机器人，每个都有自己的策略：</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--green)">MACD</span>
+      <span class="vocab-def">识别价格加速和突破的时机</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--blue)">RSI + VWAP</span>
+      <span class="vocab-def">在恐慌时买入，等待均值回归</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--purple)">CVD</span>
+      <span class="vocab-def">检测价格与真实资金流向的背离</span>
+    </div>
+  </div>
+  <div class="tip green">
+    <strong>你不需要深入理解原理。</strong> 机器人会自动运行，你只需要监控。
+  </div>
+</div>
+
+<!-- 步骤 2 -->
+<div class="step" id="etape2">
+  <div class="step-badge cyan">步骤 2</div>
+  <h2>术语表</h2>
+  <p>以下是仪表板上常见术语的含义：</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">交易（Trade）</span>
+      <span class="vocab-def">机器人自动完成的一笔买入或卖出</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">BUY</span>
+      <span class="vocab-def">机器人买入（认为价格会上涨）</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">SELL</span>
+      <span class="vocab-def">机器人卖出（认为价格会下跌）</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">PnL</span>
+      <span class="vocab-def"><strong style="color:var(--green)">绿色（+）</strong> = 盈利。<strong style="color:var(--red)">红色（-）</strong> = 亏损。</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">成功率</span>
+      <span class="vocab-def">每 100 笔交易中有多少盈利。60% = 60 笔盈利。</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">止损（Stop Loss）</span>
+      <span class="vocab-def">安全网。亏损过大时自动平仓。</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">止盈（Take Profit）</span>
+      <span class="vocab-def">盈利达到目标时自动获利了结。</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">模拟（Simulation）</span>
+      <span class="vocab-def">训练模式。虚拟资金，零风险。</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">夏普比率（Sharpe）</span>
+      <span class="vocab-def">风险调整后的收益指标。超过 1 = 良好，超过 2 = 非常优秀。</span>
+    </div>
+  </div>
+</div>
+
+<!-- 步骤 3 -->
+<div class="step" id="etape3">
+  <div class="step-badge green">步骤 3</div>
+  <h2>启动平台</h2>
+  <ol class="actions">
+    <li><div class="num">1</div><div>进入 <code>TRADING BOT</code> 文件夹</div></li>
+    <li><div class="num">2</div><div><strong>双击 <code>start.bat</code></strong></div></li>
+    <li><div class="num">3</div><div>黑色窗口会打开 — <strong>不要关闭它</strong>，这是运行引擎</div></li>
+    <li><div class="num">4</div><div>仪表板会在浏览器中打开</div></li>
+  </ol>
+  <div class="tip amber">
+    <strong>黑色窗口必须保持打开。</strong> 关闭它，所有机器人都会停止。
+  </div>
+  <p>如果浏览器没有自动打开，在地址栏输入 <code>http://localhost:1818</code></p>
+</div>
+
+<!-- 步骤 4 -->
+<div class="step" id="etape4">
+  <div class="step-badge purple">步骤 4</div>
+  <h2>认识界面</h2>
+  <p>仪表板有 <strong>6 个区域</strong>，从上到下：</p>
+  <table class="tbl">
+    <thead><tr><th>区域</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>顶部栏</strong></td><td>当前模式（模拟或实盘）、时间、教程和文档链接</td></tr>
+      <tr><td><strong>4 张卡片</strong></td><td>4 个机器人（MACD、RSI、CVD、跟单）。各有开关、数字和迷你图</td></tr>
+      <tr><td><strong>4 个指标</strong></td><td>总盈亏、最佳机器人、交易总数、夏普比率</td></tr>
+      <tr><td><strong>图表</strong></td><td>左：资金曲线。右：各机器人对比</td></tr>
+      <tr><td><strong>风险管理</strong></td><td>日亏损条、开仓机器人、每机器人仓位、紧急按钮。<strong>下方：</strong>USDC 余额、孵化等级、移动止盈状态</td></tr>
+      <tr><td><strong>页面底部</strong></td><td>左：交易日志（含平仓原因）。右：参数设置（风险%、止损、止盈、移动止盈、模式）</td></tr>
+    </tbody>
+  </table>
+  <div class="tip blue">
+    <strong>技巧：</strong> 把鼠标悬停在仪表板任意文字上，会出现帮助气泡。
+  </div>
+</div>
+
+<!-- 步骤 5 -->
+<div class="step" id="etape5">
+  <div class="step-badge green">步骤 5</div>
+  <h2>启动你的第一个机器人</h2>
+  <ol class="actions">
+    <li><div class="num">1</div><div>确认顶部标签显示 <strong>"模拟"</strong>（黄色）</div></li>
+    <li><div class="num">2</div><div>在 <strong>MACD</strong> 卡片上，点击<strong>右侧的灰点</strong></div></li>
+    <li><div class="num">3</div><div>它会变成<strong style="color:var(--green)">绿色</strong> = 机器人正在运行！</div></li>
+    <li><div class="num">4</div><div>等待几秒，底部的交易列表会出现交易记录</div></li>
+  </ol>
+  <div class="tip green">
+    <strong>恭喜！</strong> 你的第一个机器人已启动。这是虚拟资金，零风险。
+  </div>
+  <p>停止方法：再次点击绿点，会变回灰色。</p>
+</div>
+
+<!-- 步骤 6 -->
+<div class="step" id="etape6">
+  <div class="step-badge">步骤 6</div>
+  <h2>启动 3 个机器人</h2>
+  <p>同样点击 <strong>RSI + VWAP</strong> 和 <strong>CVD</strong> 的开关。</p>
+  <p>"风险管理"中的 M、R、C 三个点会变成绿色。</p>
+  <div class="tip blue">
+    <strong>观察几天。</strong> 记录哪个机器人盈利最稳定。
+  </div>
+</div>
+
+<!-- 步骤 7 -->
+<div class="step" id="etape7">
+  <div class="step-badge cyan">步骤 7</div>
+  <h2>参数设置</h2>
+  <p>右下角的 <strong>参数设置</strong> 面板：</p>
+  <table class="tbl">
+    <thead><tr><th>参数</th><th>含义</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td><strong>仓位</strong></td><td>每笔交易的金额</td><td>保持 <strong>$1</strong></td></tr>
+      <tr><td><strong>风险 %</strong></td><td>每笔交易风险占本金的百分比</td><td>保持 <strong>1%</strong></td></tr>
+      <tr><td><strong>止损</strong></td><td>亏损超过此比例时自动平仓</td><td>保持 <strong>5%</strong></td></tr>
+      <tr><td><strong>止盈</strong></td><td>盈利达到此比例时自动了结</td><td>保持 <strong>10%</strong></td></tr>
+      <tr><td><strong>移动止盈</strong></td><td>追踪价格的动态止盈</td><td>初期<strong>关闭</strong></td></tr>
+      <tr><td><strong>激活 %</strong></td><td>启动移动止盈前的最低盈利</td><td><strong>30%</strong>（移动止盈开启时可见）</td></tr>
+      <tr><td><strong>距离 %</strong></td><td>从高点回落多少时卖出</td><td><strong>15%</strong>（移动止盈开启时可见）</td></tr>
+      <tr><td><strong>模式</strong></td><td>模拟或真实资金</td><td>保持 <strong>模拟</strong></td></tr>
+      <tr><td><strong>账户</strong></td><td>使用哪个钱包</td><td>模拟模式下不重要</td></tr>
+    </tbody>
+  </table>
+  <div class="tip red">
+    <strong>不要随意修改。</strong> 有疑问时，使用默认值。
+  </div>
+</div>
+
+<!-- 步骤 8 -->
+<div class="step" id="etape8">
+  <div class="step-badge purple">步骤 8</div>
+  <h2>阅读交易日志</h2>
+  <p>左下角的表格显示所有机器人的操作记录：</p>
+  <table class="tbl">
+    <thead><tr><th>列名</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><strong>时间</strong></td><td>交易发生的时间</td></tr>
+      <tr><td><strong>策略</strong></td><td>哪个机器人执行的</td></tr>
+      <tr><td><strong style="color:var(--green)">BUY</strong> / <strong style="color:var(--red)">SELL</strong></td><td>买入或卖出</td></tr>
+      <tr><td><strong>价格</strong></td><td>执行价格</td></tr>
+      <tr><td><strong>仓位</strong></td><td>金额</td></tr>
+      <tr><td><strong style="color:var(--green)">+$0.05</strong></td><td>盈利 5 美分</td></tr>
+      <tr><td><strong style="color:var(--red)">-$0.03</strong></td><td>亏损 3 美分</td></tr>
+      <tr><td><strong>原因</strong></td><td>触发平仓的原因（见下）</td></tr>
+    </tbody>
+  </table>
+  <h3>"原因"列 — 触发类型</h3>
+  <table class="tbl">
+    <thead><tr><th>标签</th><th>颜色</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><strong>信号</strong></td><td style="color:var(--blue)">蓝色</td><td>正常按策略信号开仓</td></tr>
+      <tr><td><strong>反转</strong></td><td style="color:var(--amber)">橙色</td><td>策略改变方向（BUY → SELL 或反过来）</td></tr>
+      <tr><td><strong>止损</strong></td><td style="color:var(--red)">红色</td><td>自动平仓 — 亏损达到阈值</td></tr>
+      <tr><td><strong>止盈</strong></td><td style="color:var(--green)">绿色</td><td>自动平仓 — 盈利达到阈值</td></tr>
+      <tr><td><strong>移动止盈</strong></td><td style="color:var(--purple)">紫色</td><td>移动止盈检测到从高点回落</td></tr>
+    </tbody>
+  </table>
+  <div class="tip blue">
+    <strong>技巧：</strong> 点击列标题可以排序。点击"原因"可以按触发类型分组。
+  </div>
+</div>
+
+<!-- 步骤 9 -->
+<div class="step" id="etape9">
+  <div class="step-badge amber">步骤 9</div>
+  <h2>切换到真实资金</h2>
+  <div class="tip red">
+    <strong>务必在模拟盈利 2 周后再做此操作。</strong>
+  </div>
+  <h3>准备工作</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>创建 Polymarket 账户并设置加密钱包</div></li>
+    <li><div class="num">2</div><div>用记事本打开 <code>.env</code> 文件</div></li>
+    <li><div class="num">3</div><div>填入你的私钥和钱包地址</div></li>
+    <li><div class="num">4</div><div>重新运行 <code>start.bat</code></div></li>
+  </ol>
+  <h3>开启实盘模式</h3>
+  <ol class="actions">
+    <li><div class="num">5</div><div>在参数设置中，关闭<strong>模拟</strong>开关</div></li>
+    <li><div class="num">6</div><div>标签会变成<strong style="color:var(--green)">绿色 "Live"</strong></div></li>
+    <li><div class="num">7</div><div>保持仓位为 <strong>$1</strong></div></li>
+  </ol>
+  <h3>资金进阶路线</h3>
+  <table class="tbl">
+    <thead><tr><th>仓位</th><th>升级条件</th></tr></thead>
+    <tbody>
+      <tr><td><strong>$1</strong></td><td>起点 — 观察 2 周</td></tr>
+      <tr><td><strong>$5</strong></td><td>20 笔盈利交易且胜率 > 55%</td></tr>
+      <tr><td><strong>$10</strong></td><td>再完成 20 笔盈利交易</td></tr>
+      <tr><td><strong>$50</strong></td><td>稳定运行数周</td></tr>
+      <tr><td><strong>$100</strong></td><td>完全有信心时</td></tr>
+    </tbody>
+  </table>
+  <div class="tip amber">
+    <strong>这个过程需要数周。</strong> 很正常。走太快的人最容易亏钱。
+  </div>
+</div>
+
+<!-- 步骤 10 -->
+<div class="step" id="etape10">
+  <div class="step-badge amber">步骤 10</div>
+  <h2>配置 .env 文件（实盘）</h2>
+  <p><code>.env</code> 文件包含你的私密信息，位于 <code>TRADING BOT</code> 根目录。</p>
+  <h3>打开和修改</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>右键 <code>.env</code> → 用<strong>记事本</strong>打开</div></li>
+    <li><div class="num">2</div><div>填写以下内容：</div></li>
+  </ol>
+  <table class="tbl">
+    <thead><tr><th>变量</th><th>含义</th><th>示例</th></tr></thead>
+    <tbody>
+      <tr><td><code>POLYMARKET_PRIVATE_KEY</code></td><td>Polygon 钱包私钥</td><td><code>0xabc123...</code></td></tr>
+      <tr><td><code>POLYMARKET_FUNDER_ADDRESS</code></td><td>钱包公钥地址</td><td><code>0xdef456...</code></td></tr>
+      <tr><td><code>POLYMARKET_TOKEN_ID</code></td><td>交易品种的标识符</td><td><code>12345...</code></td></tr>
+      <tr><td><code>DRY_RUN</code></td><td>模拟模式（<code>true</code>）或实盘（<code>false</code>）</td><td><code>false</code></td></tr>
+      <tr><td><code>MAX_POSITION_SIZE</code></td><td>每笔交易最大金额（$）</td><td><code>10</code></td></tr>
+      <tr><td><code>MAX_DAILY_LOSS</code></td><td>每日最大亏损（$）</td><td><code>50</code></td></tr>
+    </tbody>
+  </table>
+  <div class="tip red">
+    <strong>绝对不要分享此文件。</strong> 私钥 = 钱包完全访问权。.env 文件永不提交到 GitHub。
+  </div>
+</div>
+
+<!-- 步骤 11 -->
+<div class="step" id="etape11">
+  <div class="step-badge cyan">步骤 11</div>
+  <h2>在 Polymarket 上查找 Token ID</h2>
+  <p>每个 Polymarket 品种都有唯一标识符，称为 <strong>Token ID</strong>。这是告诉机器人<em>交易什么</em>的关键。</p>
+  <h3>如何找到它</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>访问 <strong>polymarket.com</strong></div></li>
+    <li><div class="num">2</div><div>选择一个品种（如 "X 事件在 Y 日期前会发生吗？"）</div></li>
+    <li><div class="num">3</div><div>Token ID 在品种 URL 中或通过 CLOB API 查看</div></li>
+    <li><div class="num">4</div><div>复制到 <code>.env</code> 的 <code>POLYMARKET_TOKEN_ID</code> 行</div></li>
+  </ol>
+  <div class="tip blue">
+    <strong>直接查询 API：</strong> 也可以访问 <code>https://clob.polymarket.com/markets</code> 查看所有品种及其 Token ID。
+  </div>
+  <p>也可以在命令行启动机器人时传入 Token ID：</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-def"><code>python deploy/run_bot.py --strategy macd --token-id "你的TOKEN_ID" --size 1.0</code></span>
+    </div>
+  </div>
+</div>
+
+<!-- 步骤 12 -->
+<div class="step" id="etape12">
+  <div class="step-badge green">步骤 12</div>
+  <h2>启动实盘模式</h2>
+  <div class="tip red">
+    <strong>前提条件：</strong> 必须先完成至少 2 周的正收益模拟才能进入实盘。
+  </div>
+  <h3>方法 A — 通过仪表板（推荐）</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>确认 <code>.env</code> 已正确填写</div></li>
+    <li><div class="num">2</div><div>双击运行 <code>start.bat</code></div></li>
+    <li><div class="num">3</div><div>在参数设置中，关闭<strong>模拟</strong>模式</div></li>
+    <li><div class="num">4</div><div>标签会变成<strong style="color:var(--green)">绿色 "Live"</strong></div></li>
+    <li><div class="num">5</div><div>保持仓位为 <strong>$1</strong></div></li>
+    <li><div class="num">6</div><div>点击你选择的机器人的 <strong>Start</strong></div></li>
+  </ol>
+  <h3>方法 B — 命令行（仅单个机器人）</h3>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-def"><code>cd "C:\DEV POWERSHELL\__Q17\TRADING BOT"</code></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-def"><code>.venv\Scripts\activate</code></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-def"><code>python deploy/run_bot.py --strategy macd --token-id "你的ID" --size 1.0</code></span>
+    </div>
+  </div>
+  <div class="tip blue">
+    <strong>机器人每 30 秒获取一次数据</strong> 并在每个周期执行策略。你可以在仪表板中实时监控。
+  </div>
+</div>
+
+<!-- 步骤 13 -->
+<div class="step" id="etape13">
+  <div class="step-badge purple">步骤 13</div>
+  <h2>推荐进阶路线</h2>
+  <p>按顺序遵循此路线图。<strong>不要跳步。</strong></p>
+  <table class="tbl">
+    <thead><tr><th>阶段</th><th>模式</th><th>金额</th><th>时长</th><th>目标</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td>模拟</td><td>$0</td><td>1-2 周</td><td>理解信号，确认系统正常运行</td></tr>
+      <tr><td><strong>2</strong></td><td>实盘</td><td>$1</td><td>2 周</td><td>首笔真实交易，验证实盘流程</td></tr>
+      <tr><td><strong>3</strong></td><td>实盘</td><td>$5</td><td>2 周</td><td>确认稳定性</td></tr>
+      <tr><td><strong>4</strong></td><td>实盘</td><td>$10-50</td><td>自动</td><td>缩放器在胜率 > 55% 时自动升级</td></tr>
+    </tbody>
+  </table>
+  <div class="tip green">
+    <strong>缩放器是你的朋友。</strong> 它会在盈利良好时自动增加仓位，在亏损严重时（连续 5 笔亏损或胜率 < 40%）自动降低仓位。无需手动操作。
+  </div>
+</div>
+
+<!-- 步骤 14 -->
+<div class="step" id="etape14">
+  <div class="step-badge">步骤 14</div>
+  <h2>每日监控</h2>
+  <p>实盘模式下，每天<strong>至少查看一次</strong>你的机器人：</p>
+  <table class="tbl">
+    <thead><tr><th>查看位置</th><th>检查内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>仪表板</strong></td><td>总盈亏、胜率、资金曲线</td></tr>
+      <tr><td><strong>风险管理</strong></td><td>日亏损条 — 如果满了，机器人已被阻止</td></tr>
+      <tr><td><strong>交易日志</strong></td><td>最近的交易是否合理？</td></tr>
+      <tr><td><strong>API 文档</strong></td><td><code>http://localhost:1818/docs</code> 可实时查询</td></tr>
+    </tbody>
+  </table>
+  <div class="tip amber">
+    <strong>危险信号：</strong> 盈亏暴跌、胜率低于 40%、长时间无交易。出现这些情况 → 点击红色<strong>"全部停止"</strong>按钮。
+  </div>
+</div>
+
+<!-- 步骤 15 -->
+<div class="step" id="etape15">
+  <div class="step-badge red">步骤 15</div>
+  <h2>十大铁律</h2>
+  <div class="tip red" style="font-size:15px; line-height: 2.2;">
+    <strong>1.</strong> 绝不用不能亏的钱去投资<br>
+    <strong>2.</strong> 永远从模拟模式开始<br>
+    <strong>3.</strong> 永远从 $1 开始<br>
+    <strong>4.</strong> 永远不要分享你的 <code>.env</code> 文件<br>
+    <strong>5.</strong> 每天至少检查一次机器人<br>
+    <strong>6.</strong> 亏损过大 → 点击红色"全部停止"<br>
+    <strong>7.</strong> 机器人也会亏损 — 不是魔法<br>
+    <strong>8.</strong> 昨天有效的方法明天可能无效<br>
+    <strong>9.</strong> 有疑问 → 保持模拟模式<br>
+    <strong>10.</strong> 交易是马拉松，不是短跑
+  </div>
+  <div class="tip green" style="text-align:center; font-size: 16px;">
+    <strong>你准备好了。</strong> 返回<a href="/" style="color:inherit;text-decoration:underline;">仪表板</a>，启动你的第一个机器人吧！
+  </div>
+</div>
+
+<!-- 风险管理专区 -->
+<div class="divider"></div>
+<div class="hero" style="padding: 24px 0 32px;">
+  <h1>风险管理：全面理解</h1>
+  <p>自动保护你资金的所有机制。</p>
+</div>
+
+<!-- 1-2% 规则 -->
+<div class="step" id="risk-percent">
+  <div class="step-badge red">风险</div>
+  <h2>每笔交易 1-2% 规则</h2>
+  <p>这是交易中最重要的规则：<strong>单笔交易风险不得超过总资金的 1-2%</strong>。</p>
+  <h3>具体例子</h3>
+  <table class="tbl">
+    <thead><tr><th>本金</th><th>1% 风险</th><th>2% 风险</th></tr></thead>
+    <tbody>
+      <tr><td>500 USDC</td><td>最多亏损 5 USDC</td><td>最多亏损 10 USDC</td></tr>
+      <tr><td>1000 USDC</td><td>最多亏损 10 USDC</td><td>最多亏损 20 USDC</td></tr>
+      <tr><td>5000 USDC</td><td>最多亏损 50 USDC</td><td>最多亏损 100 USDC</td></tr>
+    </tbody>
+  </table>
+  <h3>为什么至关重要</h3>
+  <table class="tbl">
+    <thead><tr><th>场景</th><th>无规则（10%/笔）</th><th>1% 规则</th></tr></thead>
+    <tbody>
+      <tr><td>连续 5 笔亏损</td><td><strong style="color:var(--red)">-50% 本金</strong></td><td>-5% 本金</td></tr>
+      <tr><td>连续 10 笔亏损</td><td><strong style="color:var(--red)">几乎归零</strong></td><td>-10% 本金</td></tr>
+      <tr><td>连续亏损后</td><td>无法回本</td><td><strong style="color:var(--green)">依然存活</strong></td></tr>
+    </tbody>
+  </table>
+  <h3>机器人如何计算</h3>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">公式</span>
+      <span class="vocab-def"><code>仓位 = (本金 × 风险%) / (价格 × 止损%)</code></span>
+    </div>
+  </div>
+  <p>例子：本金 = 1000 USDC，风险 = 1%，买入价 = 0.60$，止损 = 40%</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">计算</span>
+      <span class="vocab-def"><code>最大亏损 = 1000 × 0.01 = 10 USDC</code></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word"></span>
+      <span class="vocab-def"><code>每份亏损 = 0.60 × 0.40 = 0.24 USDC</code></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word"></span>
+      <span class="vocab-def"><code>份数 = 10 / 0.24 = 41 份</code></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word"></span>
+      <span class="vocab-def"><code>总投入 = 41 × 0.60 = 25 USDC</code>（但实际风险只有 10 USDC）</span>
+    </div>
+  </div>
+  <div class="tip green">
+    <strong>机器人自动完成此计算</strong> 每笔交易。它实时获取你的 USDC 余额并调整仓位大小。无需手动计算。
+  </div>
+  <h3>参数设置</h3>
+  <table class="tbl">
+    <thead><tr><th>.env 变量</th><th>数值</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><code>RISK_PER_TRADE_PCT</code></td><td><code>0.01</code></td><td>每笔交易风险 1%（推荐）</td></tr>
+      <tr><td><code>RISK_PER_TRADE_PCT</code></td><td><code>0.02</code></td><td>每笔交易风险 2%（最大）</td></tr>
+    </tbody>
+  </table>
+  <div class="tip red">
+    <strong>切勿超过 2%。</strong> 即便你有信心。这个规则决定了谁能活下来，谁会亏光。
+  </div>
+</div>
+
+<!-- 止损 -->
+<div class="step" id="stop-loss">
+  <div class="step-badge red">保护</div>
+  <h2>止损：安全网</h2>
+  <p>止损是一个<strong>当亏损达到阈值时自动平仓的订单</strong>。这是交易中的生命保险。</p>
+  <h3>工作原理</h3>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">0.55$ 买入</span>
+      <span class="vocab-def">40% 止损 → 价格跌至 <strong>0.33 $</strong> 时机器人卖出</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">无止损</span>
+      <span class="vocab-def">如果价格跌至 0.05 $ → 你亏损<strong>91%</strong>投入资金</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">40% 止损</span>
+      <span class="vocab-def">亏损限制在<strong>40%</strong>投入资金，机器人出场</span>
+    </div>
+  </div>
+  <h3>具体数字例子</h3>
+  <table class="tbl">
+    <thead><tr><th>投入</th><th>买入价</th><th>40% 止损价</th><th>最大亏损</th></tr></thead>
+    <tbody>
+      <tr><td>10 USDC</td><td>0.55 $</td><td>0.33 $</td><td><strong>4 USDC</strong>（而不是 10）</td></tr>
+      <tr><td>25 USDC</td><td>0.70 $</td><td>0.42 $</td><td><strong>10 USDC</strong>（而不是 25）</td></tr>
+      <tr><td>50 USDC</td><td>0.60 $</td><td>0.36 $</td><td><strong>20 USDC</strong>（而不是 50）</td></tr>
+    </tbody>
+  </table>
+  <div class="tip blue">
+    <strong>机器人每 30 秒检查一次止损。</strong> 如果价格突破阈值，它会立即卖出，不等策略信号。
+  </div>
+  <h3>建议设置</h3>
+  <table class="tbl">
+    <thead><tr><th>品种类型</th><th>止损建议</th><th>原因</th></tr></thead>
+    <tbody>
+      <tr><td>平稳品种</td><td>20-30%</td><td>波动小，可以紧密止损</td></tr>
+      <tr><td>正常品种</td><td>30-40%</td><td>良好平衡（机器人默认值）</td></tr>
+      <tr><td>高波动品种</td><td>40-50%</td><td>避免假突破触发止损</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 止盈 -->
+<div class="step" id="take-profit">
+  <div class="step-badge green">盈利</div>
+  <h2>止盈：锁定收益</h2>
+  <p>止盈是止损的反面：<strong>当盈利达到阈值时自动卖出</strong>。没有它，账面盈利可能化为乌有。</p>
+  <h3>例子</h3>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">0.55$ 买入</span>
+      <span class="vocab-def">60% 止盈 → 价格达到 <strong>0.88 $</strong> 时机器人卖出</span>
+    </div>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>投入</th><th>买入价</th><th>60% 止盈价</th><th>锁定盈利</th></tr></thead>
+    <tbody>
+      <tr><td>10 USDC</td><td>0.55 $</td><td>0.88 $</td><td><strong>+6 USDC</strong></td></tr>
+      <tr><td>25 USDC</td><td>0.40 $</td><td>0.64 $</td><td><strong>+15 USDC</strong></td></tr>
+    </tbody>
+  </table>
+  <h3>风险收益比</h3>
+  <p>止盈与止损的比例至少应该是 <strong>1:1.5</strong>。意思是：每风险 1$，至少要瞄准 1.50$ 的盈利。</p>
+  <table class="tbl">
+    <thead><tr><th>止损</th><th>最低止盈</th><th>比例</th></tr></thead>
+    <tbody>
+      <tr><td>5%</td><td>7.5%</td><td>1:1.5</td></tr>
+      <tr><td>30%</td><td>45%</td><td>1:1.5</td></tr>
+      <tr><td>40%</td><td>60%</td><td>1:1.5</td></tr>
+    </tbody>
+  </table>
+  <div class="tip amber">
+    <strong>即使胜率只有 40%</strong>，良好的风险收益比也能让你盈利。这就是交易的数学。
+  </div>
+</div>
+
+<!-- 移动止盈 -->
+<div class="step" id="trailing-tp">
+  <div class="step-badge purple">进阶</div>
+  <h2>移动止盈：让利润奔跑</h2>
+  <p>移动止盈是<strong>智能版</strong>的固定止盈。不是固定价格卖出，而是<strong>追踪价格上涨</strong>，只在价格回落时卖出。</p>
+  <h3>工作原理（4 步）</h3>
+  <ol class="actions">
+    <li><div class="num">1</div><div>以 0.55 $ 买入。移动止盈设置：激活 +30%，距离 15%。</div></li>
+    <li><div class="num">2</div><div>价格上涨至 0.72 $（+31%）→ <strong>移动止盈激活</strong>。卖出阈值设为 0.72 - 15% = <strong>0.612 $</strong>。</div></li>
+    <li><div class="num">3</div><div>价格继续涨至 0.90 $ → 阈值<strong>跟随</strong>至 0.90 - 15% = <strong>0.765 $</strong>。</div></li>
+    <li><div class="num">4</div><div>价格回落触及 0.765 $ → <strong>机器人卖出</strong>。你每股盈利 0.765 - 0.55 = <strong>$0.215</strong>，而固定止盈（+60%）只能赚 $0.088。</div></li>
+  </ol>
+  <h3>对比</h3>
+  <table class="tbl">
+    <thead><tr><th></th><th>固定止盈（+60%）</th><th>移动止盈</th></tr></thead>
+    <tbody>
+      <tr><td>卖出价格</td><td>0.88 $（固定）</td><td>0.765 $（追踪）</td></tr>
+      <tr><td>价格涨到 0.95 $</td><td>已在 0.88 $ 卖出</td><td><strong>仍在持仓，阈值 0.808 $</strong></td></tr>
+      <tr><td>优势</td><td>简单、可预测</td><td><strong>捕捉大行情</strong></td></tr>
+      <tr><td>劣势</td><td>错过大行情</td><td>可能略低于最高点卖出</td></tr>
+    </tbody>
+  </table>
+  <h3>参数设置</h3>
+  <table class="tbl">
+    <thead><tr><th>.env 变量</th><th>默认值</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><code>TRAILING_TP_ENABLED</code></td><td><code>false</code></td><td>开启/关闭移动止盈</td></tr>
+      <tr><td><code>TRAILING_TP_ACTIVATION</code></td><td><code>0.30</code></td><td>盈利 +30% 后启动移动止盈</td></tr>
+      <tr><td><code>TRAILING_TP_DISTANCE</code></td><td><code>0.15</code></td><td>从高点回落 15% 时卖出</td></tr>
+    </tbody>
+  </table>
+  <div class="tip blue">
+    <strong>移动止盈开启时，固定止盈会禁用。</strong> 两者不同时运行。机器人只使用其中一个。
+  </div>
+  <div class="tip amber">
+    <strong>建议：</strong> 初期使用固定止盈（更简单）。等完全理解策略行为后再开启移动止盈。
+  </div>
+</div>
+
+<!-- 动态仓位 -->
+<div class="step" id="dynamic-sizing">
+  <div class="step-badge cyan">计算</div>
+  <h2>动态仓位计算</h2>
+  <p>机器人<strong>永远不会用固定金额</strong>每笔交易。它综合以下因素自动计算最优仓位：</p>
+  <ol class="actions">
+    <li><div class="num">1</div><div><strong>你的本金</strong> — 实时获取 Polygon 上的 USDC 余额</div></li>
+    <li><div class="num">2</div><div><strong>你的最大风险</strong> — 本金的 1% 或 2%（可调）</div></li>
+    <li><div class="num">3</div><div><strong>止损设置</strong> — 计算每股亏损金额</div></li>
+    <li><div class="num">4</div><div><strong>缩放器上限</strong> — 孵化系统也限制最大仓位</div></li>
+  </ol>
+  <h3>完整例子</h3>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">本金</span>
+      <span class="vocab-def">2000 USDC</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">风险</span>
+      <span class="vocab-def">1% → 最大允许亏损 = <strong>20 USDC</strong></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">买入价</span>
+      <span class="vocab-def">0.60 $ / 份</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">止损</span>
+      <span class="vocab-def">40% → 每份亏损 = 0.60 × 0.40 = <strong>0.24 $</strong></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">份数</span>
+      <span class="vocab-def">20 / 0.24 = <strong>83 份</strong></span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">总投入</span>
+      <span class="vocab-def">83 × 0.60 = <strong>50 USDC</strong>（但最大亏损 = 20 USDC）</span>
+    </div>
+  </div>
+  <div class="tip green">
+    <strong>本金下降，仓位自动减小。本金上升，仓位自动增加。这是自我调节。</strong>
+  </div>
+</div>
+
+<!-- 孵化/缩放器 -->
+<div class="step" id="incubation">
+  <div class="step-badge amber">孵化</div>
+  <h2>孵化系统（缩放器）</h2>
+  <p>缩放器是一个<strong>根据真实表现自动增减仓位</strong>的进阶系统。</p>
+  <h3>进阶阶梯</h3>
+  <table class="tbl">
+    <thead><tr><th>等级</th><th>最大仓位</th><th>升级条件</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td>$1</td><td>起点 — 始终从这里开始</td></tr>
+      <tr><td><strong>2</strong></td><td>$5</td><td>20 笔交易且胜率 ≥ 55%，盈利因子 ≥ 1.3</td></tr>
+      <tr><td><strong>3</strong></td><td>$10</td><td>再完成 20 笔标准交易</td></tr>
+      <tr><td><strong>4</strong></td><td>$50</td><td>再完成 20 笔 — 表现稳定</td></tr>
+      <tr><td><strong>5</strong></td><td>$100</td><td>最高等级</td></tr>
+    </tbody>
+  </table>
+  <h3>保护机制：自动降级</h3>
+  <p>如果满足以下条件，缩放器<strong>立即降一级</strong>：</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--red)">5 笔连续亏损</span>
+      <span class="vocab-def">5 笔亏损交易 → 立即降级</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word" style="color:var(--red)">胜率低于</span>
+      <span class="vocab-def">成功率跌破 40% → 立即降级</span>
+    </div>
+  </div>
+  <h3>与动态仓位的配合</h3>
+  <p>缩放器和 1-2% 风险规则协同工作：</p>
+  <div class="vocab">
+    <div class="vocab-item">
+      <span class="vocab-word">1% 风险</span>
+      <span class="vocab-def">基于本金计算最优仓位</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">缩放器</span>
+      <span class="vocab-def">基于表现设定上限</span>
+    </div>
+    <div class="vocab-item">
+      <span class="vocab-word">最终结果</span>
+      <span class="vocab-def"><strong>机器人取两者中较小的值</strong> = 双重保护</span>
+    </div>
+  </div>
+  <div class="tip green">
+    <strong>例子：</strong> 1% 风险规则说"仓位 $50"，但缩放器在第 2 级（最高 $5）。机器人用<strong>$5</strong>。当缩放器升到第 4 级时，机器人最高可用 $50。
+  </div>
+</div>
+
+<!-- 总结 -->
+<div class="step" id="recap-risk">
+  <div class="step-badge">总结</div>
+  <h2>各机制协同运作</h2>
+  <p>每 30 秒一次，机器人按此顺序检查：</p>
+  <ol class="actions">
+    <li><div class="num" style="background:var(--red)">1</div><div><strong>止损</strong> — 价格是否突破亏损阈值？是则立即卖出。</div></li>
+    <li><div class="num" style="background:var(--purple)">2</div><div><strong>移动止盈</strong> — 如果开启，价格是否从高点回落？是则卖出。</div></li>
+    <li><div class="num" style="background:var(--green)">3</div><div><strong>固定止盈</strong> — 如果移动止盈未开启，盈利是否达到阈值？是则卖出。</div></li>
+    <li><div class="num" style="background:var(--blue)">4</div><div><strong>策略信号</strong> — 策略是否改变方向？是则平仓并反向开仓。</div></li>
+    <li><div class="num" style="background:var(--cyan)">5</div><div><strong>新交易</strong> — 无持仓 + 买卖信号 → 计算动态仓位 → 开仓。</div></li>
+  </ol>
+  <div class="tip blue" style="font-size:15px;">
+    <strong>新手推荐配置：</strong><br>
+    风险：<code>1%</code> · 止损：<code>40%</code> · 止盈：<code>60%</code> · 移动止盈：<code>关闭</code> · 缩放器：第 1 级（$1）
+  </div>
+</div>
+
+<div class="footer">
+  <a href="/">仪表板</a> · <a href="/static/docs_zh.html" target="_blank">技术文档</a>
+</div>
+
+</div><!-- /content -->
+</div><!-- /container -->
+
+<script>
+const sidebarLinks = document.querySelectorAll('.sidebar a');
+const sections = [];
+sidebarLinks.forEach(link => {
+  const id = link.getAttribute('href').slice(1);
+  const el = document.getElementById(id);
+  if (el) sections.push({ id, el, link });
+});
+function updateSidebar() {
+  let current = sections[0];
+  for (const s of sections) {
+    if (s.el.getBoundingClientRect().top <= 120) current = s;
+  }
+  sidebarLinks.forEach(l => l.classList.remove('active'));
+  if (current) current.link.classList.add('active');
+}
+window.addEventListener('scroll', updateSidebar, { passive: true });
+updateSidebar();
+</script>
+</body>
+</html>

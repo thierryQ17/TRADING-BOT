@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文档 — Polymarket RBI 交易机器人</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-0: #eef1f5; --bg-1: #f5f7fa; --bg-2: #ffffff;
+  --border: #d0d7e0; --border-bright: #b8c2cf;
+  --text-0: #1a2332; --text-1: #4a5568; --text-2: #8694a7;
+  --green: #0d9f4f; --red: #d32f2f; --blue: #2563eb;
+  --purple: #7c3aed; --cyan: #0891b2; --amber: #d97706;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Instrument Sans', -apple-system, sans-serif;
+}
+html { font-size: 15px; scroll-behavior: smooth; }
+body { background: var(--bg-0); color: var(--text-0); font-family: var(--font-sans); line-height: 1.7; }
+.topnav {
+  position: sticky; top: 0; z-index: 100; background: var(--bg-2);
+  border-bottom: 1px solid var(--border); padding: 12px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(12px);
+}
+.topnav-left { display: flex; align-items: center; gap: 12px; }
+.topnav-logo {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: white;
+}
+.topnav-title { font-weight: 700; font-size: 15px; color: var(--text-0); }
+.topnav-links { display: flex; gap: 8px; }
+.topnav-links a {
+  padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  text-decoration: none; color: var(--text-1); font-weight: 500; transition: all 0.2s;
+}
+.topnav-links a:hover { background: var(--bg-0); color: var(--text-0); }
+.topnav-links a.primary { background: var(--blue); color: white; }
+.topnav-links a.primary:hover { opacity: 0.9; }
+.page { display: flex; max-width: 1200px; margin: 0 auto; }
+.sidebar {
+  width: 240px; flex-shrink: 0; padding: 24px 0 24px 32px;
+  position: sticky; top: 60px; height: calc(100vh - 60px); overflow-y: auto;
+}
+.sidebar-section { margin-bottom: 20px; }
+.sidebar-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-2); margin-bottom: 8px;
+}
+.sidebar a {
+  display: block; padding: 5px 12px; font-size: 13px;
+  color: var(--text-1); text-decoration: none; border-radius: 4px;
+  transition: all 0.15s; border-left: 2px solid transparent;
+}
+.sidebar a:hover { color: var(--text-0); background: var(--bg-2); border-left-color: var(--blue); }
+.content { flex: 1; padding: 32px 40px 80px 40px; min-width: 0; }
+h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; color: var(--text-0); }
+h2 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+  margin-top: 48px; margin-bottom: 16px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border); color: var(--text-0);
+}
+h3 { font-size: 16px; font-weight: 600; margin-top: 28px; margin-bottom: 10px; color: var(--text-0); }
+p { margin-bottom: 14px; color: var(--text-1); }
+.subtitle { font-size: 17px; color: var(--text-2); margin-bottom: 32px; }
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; }
+.info-card {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; position: relative; overflow: hidden;
+}
+.info-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.info-card.green::before { background: var(--green); }
+.info-card.blue::before { background: var(--blue); }
+.info-card.purple::before { background: var(--purple); }
+.info-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; font-family: var(--font-mono); }
+.info-card.green h4 { color: var(--green); }
+.info-card.blue h4 { color: var(--blue); }
+.info-card.purple h4 { color: var(--purple); }
+.info-card p { font-size: 13px; margin-bottom: 0; }
+code {
+  font-family: var(--font-mono); font-size: 13px;
+  background: var(--bg-0); padding: 2px 6px; border-radius: 4px; color: var(--purple);
+}
+pre {
+  background: #1a2332; color: #e2e8f0; border-radius: 8px;
+  padding: 18px 20px; margin: 14px 0 20px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+  border: 1px solid #2d3748;
+}
+pre .comment { color: #5a6a7e; }
+pre .keyword { color: #63b3ed; }
+pre .string { color: #68d391; }
+pre .flag { color: #fbd38d; }
+.doc-table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 13px; }
+.doc-table th {
+  background: var(--bg-0); padding: 10px 14px; text-align: left;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-2); border-bottom: 1px solid var(--border);
+}
+.doc-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-1); }
+.doc-table tr:hover td { background: var(--bg-1); }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; font-family: var(--font-mono);
+}
+.badge.get { background: #dbeafe; color: #1d4ed8; }
+.badge.post { background: #dcfce7; color: #15803d; }
+.badge.put { background: #fef3c7; color: #92400e; }
+.callout { padding: 16px 20px; border-radius: 8px; margin: 16px 0; font-size: 14px; }
+.callout.warning { background: #fef3c7; border-left: 4px solid var(--amber); color: #92400e; }
+.callout.info { background: #dbeafe; border-left: 4px solid var(--blue); color: #1e40af; }
+.callout.danger { background: #fee2e2; border-left: 4px solid var(--red); color: #991b1b; }
+.callout strong { font-weight: 700; }
+.flow { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; justify-content: center; }
+.flow-step {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 20px; text-align: center; min-width: 140px;
+}
+.flow-step .step-num { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-2); margin-bottom: 4px; }
+.flow-step .step-title { font-weight: 700; font-size: 14px; color: var(--text-0); }
+.flow-step .step-desc { font-size: 11px; color: var(--text-2); margin-top: 4px; }
+.flow-arrow { font-size: 20px; color: var(--border-bright); padding: 0 8px; }
+.tree {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 24px; margin: 14px 0 20px; font-family: var(--font-mono);
+  font-size: 13px; line-height: 1.8; color: var(--text-1);
+}
+.tree .folder { color: var(--blue); font-weight: 600; }
+.tree .file { color: var(--text-1); }
+.tree .desc { color: var(--text-2); font-style: italic; }
+@media (max-width: 900px) { .sidebar { display: none; } .content { padding: 20px; } .info-grid { grid-template-columns: 1fr; } .flow { flex-direction: column; } .flow-arrow { transform: rotate(90deg); } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-left">
+    <div class="topnav-logo">R</div>
+    <span class="topnav-title">文档</span>
+  </div>
+  <div class="topnav-links">
+    <a href="/">仪表板</a>
+    <a href="/docs_zh.html">文档</a>
+    <a href="/docs" class="primary">API Swagger</a>
+  </div>
+</nav>
+
+<div class="page">
+
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">入门</div>
+    <a href="#introduction">简介</a>
+    <a href="#architecture">架构</a>
+    <a href="#installation">安装</a>
+    <a href="#lancement">启动</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">策略</div>
+    <a href="#macd">MACD (3/15/3)</a>
+    <a href="#rsi">RSI + VWAP</a>
+    <a href="#cvd">CVD 背离</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">系统</div>
+    <a href="#backtesting">回测</a>
+    <a href="#risk">风险管理</a>
+    <a href="#incubation">孵化</a>
+    <a href="#dashboard">仪表板</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">API</div>
+    <a href="#api-endpoints">端点</a>
+    <a href="#api-settings">设置</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">安全</div>
+    <a href="#risques">风险</a>
+    <a href="#avertissement">警告</a>
+  </div>
+</aside>
+
+<main class="content">
+
+<h1>Polymarket RBI 交易机器人</h1>
+<p class="subtitle">研究 · 回测 · 孵化 — 自动化交易系统完整文档</p>
+
+<!-- 简介 -->
+<h2 id="introduction">简介</h2>
+<p>Polymarket RBI Bot 是一个自动化交易系统，在 <strong>Polymarket</strong>（基于 Polygon 的预测市场）上执行三种独立策略。</p>
+<p>系统遵循 <strong>RBI</strong> 方法论：</p>
+<div class="flow">
+  <div class="flow-step"><div class="step-num">第 1 步</div><div class="step-title">Research</div><div class="step-desc">寻找策略思路</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-num">第 2 步</div><div class="step-title">Backtest</div><div class="step-desc">用历史数据测试</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-num">第 3 步</div><div class="step-title">Incubate</div><div class="step-desc">以最小风险部署</div></div>
+</div>
+<p>每个机器人独立运行，有自己的 Polymarket 账户、自己的策略和自己的仓位管理。</p>
+
+<!-- 架构 -->
+<h2 id="architecture">项目架构</h2>
+<div class="tree">
+<span class="folder">polymarket-rbi-bot/</span><br>
+├── <span class="folder">api/</span> <span class="desc">— FastAPI 服务器 + 机器人管理器</span><br>
+│&nbsp;&nbsp; ├── <span class="file">server.py</span> <span class="desc">— API 路由 + Web 服务器</span><br>
+│&nbsp;&nbsp; └── <span class="file">bot_manager.py</span> <span class="desc">— 线程中机器人编排器</span><br>
+├── <span class="folder">bot/</span> <span class="desc">— 交易执行逻辑</span><br>
+│&nbsp;&nbsp; ├── <span class="file">trader.py</span> <span class="desc">— 主循环：信号 → 风险 → 执行</span><br>
+│&nbsp;&nbsp; ├── <span class="file">risk_manager.py</span> <span class="desc">— 仓位限额和日亏损</span><br>
+│&nbsp;&nbsp; ├── <span class="file">order_manager.py</span> <span class="desc">— 限价单管理</span><br>
+│&nbsp;&nbsp; └── <span class="file">position_tracker.py</span> <span class="desc">— 仓位 + 盈亏追踪</span><br>
+├── <span class="folder">strategies/</span> <span class="desc">— 3 种交易策略</span><br>
+│&nbsp;&nbsp; ├── <span class="file">base_strategy.py</span> <span class="desc">— 抽象基类（BUY/SELL/HOLD）</span><br>
+│&nbsp;&nbsp; ├── <span class="file">macd_strategy.py</span> <span class="desc">— MACD 直方图（3/15/3）</span><br>
+│&nbsp;&nbsp; ├── <span class="file">rsi_mean_reversion.py</span> <span class="desc">— RSI(14) + VWAP</span><br>
+│&nbsp;&nbsp; └── <span class="file">cvd_strategy.py</span> <span class="desc">— 累积成交量 Delta</span><br>
+├── <span class="folder">backtesting/</span> <span class="desc">— 历史回测引擎</span><br>
+│&nbsp;&nbsp; ├── <span class="file">engine.py</span> <span class="desc">— 带止损/止盈的模拟器</span><br>
+│&nbsp;&nbsp; ├── <span class="file">metrics.py</span> <span class="desc">— 胜率、夏普、回撤计算</span><br>
+│&nbsp;&nbsp; └── <span class="file">runner.py</span> <span class="desc">— 多策略并行执行</span><br>
+├── <span class="folder">data/</span> <span class="desc">— 数据和 Polymarket API 访问</span><br>
+│&nbsp;&nbsp; ├── <span class="file">downloader.py</span> <span class="desc">— 通过 ccxt 下载 OHLCV</span><br>
+│&nbsp;&nbsp; ├── <span class="file">polymarket_client.py</span> <span class="desc">— CLOB API 客户端</span><br>
+│&nbsp;&nbsp; └── <span class="file">storage.py</span> <span class="desc">— 交易用 SQLite + CSV</span><br>
+├── <span class="folder">incubation/</span> <span class="desc">— 监控和渐进式缩放</span><br>
+│&nbsp;&nbsp; ├── <span class="file">monitor.py</span> <span class="desc">— 控制台仪表板</span><br>
+│&nbsp;&nbsp; ├── <span class="file">scaler.py</span> <span class="desc">— 资金缩放 $1 → $5 → $10 → $50 → $100</span><br>
+│&nbsp;&nbsp; └── <span class="file">logger.py</span> <span class="desc">— 结构化 JSONL 日志</span><br>
+├── <span class="folder">dashboard/</span> <span class="desc">— Web 界面</span><br>
+│&nbsp;&nbsp; ├── <span class="file">index.html</span> <span class="desc">— 主仪表板</span><br>
+│&nbsp;&nbsp; ├── <span class="file">docs_zh.html</span> <span class="desc">— 本文档（中文版）</span><br>
+│&nbsp;&nbsp; └── <span class="file">guide_zh.html</span> <span class="desc">— 用户指南（中文版）</span><br>
+├── <span class="folder">deploy/</span> <span class="desc">— 启动脚本</span><br>
+├── <span class="folder">config/</span> <span class="desc">— 配置和账户</span><br>
+├── <span class="file">start.bat</span> <span class="desc">— Windows 启动器（双击）</span><br>
+├── <span class="file">requirements.txt</span> <span class="desc">— Python 依赖</span><br>
+└── <span class="file">.env</span> <span class="desc">— 私钥（永不分享！）</span><br>
+</div>
+
+<!-- 安装 -->
+<h2 id="installation">安装</h2>
+<h3>前提条件</h3>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li><strong>Python 3.10+</strong> 已安装并在 PATH 中</li>
+  <li><strong>pip</strong>（随 Python 一起安装）</li>
+  <li>一个<strong>Polygon 钱包</strong>，有资金用于实盘交易</li>
+</ul>
+<h3>自动安装</h3>
+<p>双击 <code>start.bat</code> — 它会自动完成所有步骤：</p>
+<pre><span class="comment"># start.bat 自动执行：</span>
+1. 检查 Python 是否安装
+2. 创建虚拟环境（.venv）
+3. 安装所有依赖（requirements.txt）
+4. 如果缺失则复制 .env.example → .env
+5. 在 http://localhost:1818 启动服务器
+6. 在浏览器中打开仪表板</pre>
+<h3>手动安装</h3>
+<pre><span class="comment"># 创建并激活虚拟环境</span>
+<span class="keyword">cd</span> <span class="string">"C:\DEV POWERSHELL\TRADING BOT"</span>
+python -m venv .venv
+.venv\Scripts\activate
+
+<span class="comment"># 安装依赖</span>
+pip install -r requirements.txt
+
+<span class="comment"># 配置环境</span>
+copy .env.example .env
+<span class="comment"># 用你的密钥编辑 .env</span>
+
+<span class="comment"># 启动</span>
+python api/server.py</pre>
+<h3>配置（.env）</h3>
+<table class="doc-table">
+  <thead><tr><th>变量</th><th>描述</th><th>默认值</th></tr></thead>
+  <tbody>
+    <tr><td><code>POLYMARKET_PRIVATE_KEY</code></td><td>Polygon 钱包私钥</td><td>—</td></tr>
+    <tr><td><code>POLYMARKET_FUNDER_ADDRESS</code></td><td>钱包地址</td><td>—</td></tr>
+    <tr><td><code>MAX_POSITION_SIZE</code></td><td>每笔仓位最大金额（$）</td><td>10</td></tr>
+    <tr><td><code>MAX_DAILY_LOSS</code></td><td>最大日亏损（$）</td><td>50</td></tr>
+    <tr><td><code>MAX_OPEN_POSITIONS</code></td><td>最大开仓数</td><td>3</td></tr>
+    <tr><td><code>DRY_RUN</code></td><td>模拟模式（无真实订单）</td><td>true</td></tr>
+  </tbody>
+</table>
+<div class="callout danger">
+  <strong>安全：</strong> 永不分享 <code>.env</code> 文件。它包含你的钱包私钥。一旦泄露 = 钱包清空。
+</div>
+
+<!-- 启动 -->
+<h2 id="lancement">启动</h2>
+<p>有多种启动方式：</p>
+<table class="doc-table">
+  <thead><tr><th>方式</th><th>命令</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td>双击</td><td><code>start.bat</code></td><td>最简单 — 全自动</td></tr>
+    <tr><td>API 服务器</td><td><code>python api/server.py</code></td><td>Web 仪表板 + API</td></tr>
+    <tr><td>单独回测</td><td><code>python deploy/run_backtest.py</code></td><td>测试策略</td></tr>
+    <tr><td>单独机器人</td><td><code>python deploy/run_bot.py --strategy macd --token-id TOKEN</code></td><td>命令行运行一个机器人</td></tr>
+    <tr><td>监控</td><td><code>python deploy/run_monitor.py</code></td><td>控制台仪表板</td></tr>
+  </tbody>
+</table>
+
+<!-- 策略 -->
+<h2 id="macd">策略 1：MACD (3/15/3)</h2>
+<div class="info-grid">
+  <div class="info-card green"><h4>类型</h4><p>动量 / 趋势追踪</p></div>
+  <div class="info-card green"><h4>入场信号</h4><p>MACD 线在信号线上方金叉</p></div>
+  <div class="info-card green"><h4>出场信号</h4><p>死叉或止损 / 止盈</p></div>
+</div>
+<p><strong>MACD</strong>（移动平均收敛发散）检测动量变化。快速参数（3/15/3）针对 5 分钟 K 线上的短期波动进行了优化。</p>
+<h3>工作原理</h3>
+<ol style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li>计算<strong>MACD 线</strong> = 收盘价的 EMA(3) - EMA(15)</li>
+  <li>计算<strong>信号线</strong> = MACD 线的 EMA(3)</li>
+  <li><strong>直方图</strong> = 两线之差</li>
+  <li><strong>BUY</strong> — MACD 线在信号线上方金叉时</li>
+  <li><strong>SELL</strong> — MACD 线在信号线下方死叉时</li>
+</ol>
+<div class="callout info">
+  <strong>适合：</strong> 有明显趋势和成交量的品种。在盘整市场（横盘）表现不佳 — 会产生假信号。
+</div>
+
+<!-- RSI -->
+<h2 id="rsi">策略 2：RSI + VWAP</h2>
+<div class="info-grid">
+  <div class="info-card blue"><h4>类型</h4><p>均值回归 / 逆势交易</p></div>
+  <div class="info-card blue"><h4>入场信号</h4><p>RSI &lt; 30（超卖）且价格在 VWAP 下方</p></div>
+  <div class="info-card blue"><h4>出场信号</h4><p>RSI &gt; 50 且价格在 VWAP，或 RSI &gt; 70</p></div>
+</div>
+<p>此策略押注于<strong>均值回归</strong>。当所有人恐慌抛售时（RSI 极低），它买入，期待反弹至"公允价值"（VWAP）。</p>
+<h3>使用的指标</h3>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li><strong>RSI (14)</strong> — 相对强弱指数。衡量资产是否超卖（&lt;30）或超买（&gt;70）</li>
+  <li><strong>VWAP</strong> — 成交量加权平均价。成交量加权的平均价格 = 市场的"公允价值"</li>
+</ul>
+<div class="callout info">
+  <strong>适合：</strong> 剧烈波动后的反弹。当市场对新闻反应过度时。
+</div>
+
+<!-- CVD -->
+<h2 id="cvd">策略 3：CVD 背离</h2>
+<div class="info-grid">
+  <div class="info-card purple"><h4>类型</h4><p>成交量 Delta / 反转检测</p></div>
+  <div class="info-card purple"><h4>入场信号</h4><p>价格方向与 CVD 的背离</p></div>
+  <div class="info-card purple"><h4>出场信号</h4><p>价格与 CVD 收敛或止损 / 止盈</p></div>
+</div>
+<p>CVD 策略分析隐藏在成交量中的<strong>真实买卖压力</strong>。当价格说一套、资金流向说另一套时，它跟随资金。</p>
+<h3>两个关键信号</h3>
+<table class="doc-table">
+  <thead><tr><th>背离类型</th><th>价格</th><th>CVD</th><th>信号</th><th>解读</th></tr></thead>
+  <tbody>
+    <tr><td><strong>看涨背离</strong></td><td style="color:var(--red);">下跌 ↓</td><td style="color:var(--green);">上涨 ↑</td><td style="color:var(--green);font-weight:700;">BUY</td><td>隐藏买入 — 大户在散户恐慌时买入</td></tr>
+    <tr><td><strong>看跌背离</strong></td><td style="color:var(--green);">上涨 ↑</td><td style="color:var(--red);">下跌 ↓</td><td style="color:var(--red);font-weight:700;">SELL</td><td>隐藏卖出 — 大户在散户 FOMO 时卖出</td></tr>
+  </tbody>
+</table>
+<div class="callout info">
+  <strong>适合：</strong> 检测趋势反转。有成交量和波动性时表现良好。
+</div>
+
+<!-- 回测 -->
+<h2 id="backtesting">回测</h2>
+<p>回测让你在<strong>历史数据上测试策略</strong>，然后再用真实资金冒险。</p>
+<pre><span class="comment"># 运行 3 种策略的回测</span>
+python deploy/run_backtest.py
+
+<span class="comment"># 执行流程：</span>
+<span class="comment"># 1. 通过 ccxt 下载 BTC/USDT 30 天 K 线（Binance）</span>
+<span class="comment"># 2. 在数据上运行每个策略</span>
+<span class="comment"># 3. 计算性能指标</span>
+<span class="comment"># 4. 显示排名</span></pre>
+<h3>计算的指标</h3>
+<table class="doc-table">
+  <thead><tr><th>指标</th><th>描述</th><th>最低阈值</th></tr></thead>
+  <tbody>
+    <tr><td><strong>胜率</strong></td><td>盈利交易占比</td><td>&gt; 55%</td></tr>
+    <tr><td><strong>盈利因子</strong></td><td>总盈利 / 总亏损</td><td>&gt; 1.5</td></tr>
+    <tr><td><strong>最大回撤</strong></td><td>从峰值到谷底的最大损失</td><td>&lt; 20%</td></tr>
+    <tr><td><strong>夏普比率</strong></td><td>风险调整后收益（年化）</td><td>&gt; 1.0</td></tr>
+    <tr><td><strong>交易数量</strong></td><td>样本大小</td><td>&gt; 100</td></tr>
+  </tbody>
+</table>
+<div class="callout warning">
+  <strong>注意：</strong> 回测不是保证。过度拟合（为过去优化）是第一大陷阱。完美的回测可能在实盘中因滑点、费用和流动性而失败。
+</div>
+
+<!-- 风险管理 -->
+<h2 id="risk">风险管理器</h2>
+<p>风险管理器是每笔交易前的<strong>最后一道防线</strong>。未经其批准，任何订单都不会执行。</p>
+<h3>执行的规则</h3>
+<table class="doc-table">
+  <thead><tr><th>规则</th><th>阻止条件</th><th>可配置</th></tr></thead>
+  <tbody>
+    <tr><td><strong>最大仓位</strong></td><td>仓位 > MAX_POSITION_SIZE</td><td>.env</td></tr>
+    <tr><td><strong>最大持仓</strong></td><td>开仓数 >= MAX_OPEN_POSITIONS</td><td>.env</td></tr>
+    <tr><td><strong>日亏损</strong></td><td当日盈亏 <= -MAX_DAILY_LOSS</td><td>.env</td></tr>
+    <tr><td><strong>止损</strong></td><td>单笔亏损 > 5%</td><td>config/settings.py</td></tr>
+    <tr><td><strong>止盈</strong></td><td>单笔盈利 > 10%</td><td>config/settings.py</td></tr>
+  </tbody>
+</table>
+<p>如果达到日亏损限额，<strong>所有机器人停止</strong>直到次日（UTC 午夜重置）。</p>
+
+<!-- 孵化 -->
+<h2 id="incubation">孵化</h2>
+<p>孵化是<strong>渐进式部署</strong>阶段。绝不一次性投入大量资金。</p>
+<h3>缩放阶梯</h3>
+<div class="flow">
+  <div class="flow-step"><div class="step-title">$1</div><div class="step-desc">第 1 级<br>观察期</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$5</div><div class="step-desc">第 2 级<br>验证期</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$10</div><div class="step-desc">第 3 级<br>建立信心</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$50</div><div class="step-desc">第 4 级<br>规模扩张</div></div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-step"><div class="step-title">$100</div><div class="step-desc">第 5 级<br>正式生产</div></div>
+</div>
+<p>升级到下一级的要求：</p>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li>当前级别至少完成 <strong>20 笔交易</strong></li>
+  <li>胜率 > <strong>55%</strong></li>
+  <li>盈利因子 > <strong>1.3</strong></li>
+</ul>
+
+<!-- 仪表板 -->
+<h2 id="dashboard">仪表板</h2>
+<p>Web 仪表板（访问 <a href="/" style="color:var(--blue);">http://localhost:1818</a>）可以：</p>
+<ul style="margin: 10px 0 16px 24px; color: var(--text-1);">
+  <li>通过开关<strong>单独启动/停止</strong>每个机器人</li>
+  <li>查看<strong>实时指标</strong>：盈亏、胜率、夏普比率</li>
+  <li>追踪每种策略的<strong>资金曲线</strong>（资金变化）</li>
+  <li>查看<strong>交易日志</strong>（最近 50 笔交易）</li>
+  <li>监控<strong>风险管理器</strong>：日亏损、开仓情况</li>
+  <li>紧急情况点击红色<strong>全部停止</strong>按钮</li>
+  <li>修改<strong>设置</strong>：仓位、止损、止盈、模拟模式</li>
+</ul>
+<p>仪表板每<strong>3 秒</strong>查询一次 API 获取实时数据。</p>
+
+<!-- API -->
+<h2 id="api-endpoints">API 端点</h2>
+<p>REST API 访问地址 <code>http://localhost:1818/api/</code>。交互式 Swagger 文档在 <a href="/docs" style="color:var(--blue);">/docs</a>。</p>
+<table class="doc-table">
+  <thead><tr><th>方法</th><th>端点</th><th>描述</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/bots</code></td><td>3 个机器人的列表，含状态、盈亏、胜率</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/{key}/start</code></td><td>启动一个机器人（macd、rsi、cvd）</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/{key}/stop</code></td><td>停止一个机器人</td></tr>
+    <tr><td><span class="badge post">POST</span></td><td><code>/api/bots/kill-all</code></td><td>停止所有机器人</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/metrics</code></td><td>全局指标（总盈亏、夏普等）</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/trades?limit=50</code></td><td>最近的交易</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/risk</code></td><td>风险管理器状态</td></tr>
+    <tr><td><span class="badge get">GET</span></td><td><code>/api/settings</code></td><td>当前设置</td></tr>
+    <tr><td><span class="badge put">PUT</span></td><td><code>/api/settings</code></td><td>修改设置</td></tr>
+  </tbody>
+</table>
+<h2 id="api-settings">通过 API 修改设置</h2>
+<pre><span class="comment"># 示例：修改仓位大小</span>
+curl -X PUT http://localhost:1818/api/settings \
+  -H "Content-Type: application/json" \
+  -d '{"position_size": 5.0, "dry_run": true}'</pre>
+
+<!-- 风险 -->
+<h2 id="risques">已知风险</h2>
+<table class="doc-table">
+  <thead><tr><th>风险</th><th>描述</th><th>缓解措施</th></tr></thead>
+  <tbody>
+    <tr><td><strong>过度拟合</strong></td><td>为过去优化的策略在实盘中失败</td><td>在不同时间段回测，走前分析</td></tr>
+    <tr><td><strong>滑点</strong></td><td>实际成交价与预期不同</td><td>仅使用限价单（Polymarket 0 手续费）</td></tr>
+    <tr><td><strong>流动性</strong></td><td>订单无法成交或只能部分成交</td><td>小仓位，活跃品种</td></tr>
+    <tr><td><strong>API 宕机</strong></td><td> Polymarket 在持仓期间不可访问</td><td>内置止损，持续监控</td></tr>
+    <tr><td><strong>密钥泄露</strong></td><td>私钥暴露 = 钱包清空</td><td>.gitignore 包含 .env，永不提交</td></tr>
+    <tr><td><strong>监管风险</strong></td><td>Polymarket 有地区限制</td><td>确认你所在国家/地区的合法性</td></tr>
+  </tbody>
+</table>
+
+<!-- 警告 -->
+<h2 id="avertissement">重要声明</h2>
+<div class="callout danger">
+  <strong>重要警告</strong><br><br>
+  本项目仅供<strong>教育和实验目的</strong>。交易涉及财务损失风险。过去的表现（回测结果）不保证未来结果。<br><br>
+  <strong>铁律：</strong><br>
+  &bull; 永远不要投入你无法承受损失的资金<br>
+  &bull; 始终从 DRY_RUN 模式开始<br>
+  &bull; 遵循孵化缩放路线（$1 → $5 → $10...）<br>
+  &bull; 定期监控机器人<br>
+  &bull; 99% 的手动交易者亏损 — 机器人不是魔法
+</div>
+
+</main>
+</div>
+
+</body>
+</html>

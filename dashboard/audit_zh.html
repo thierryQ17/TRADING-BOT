@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代码审计 — Polymarket RBI Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0a0a14;
+    --bg-surface: #10101e;
+    --bg-card: #161628;
+    --bg-card-hover: #1c1c36;
+    --border: #232340;
+    --border-subtle: #1a1a30;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a8;
+    --text-muted: #55556e;
+    --critique: #ff3b5c;
+    --critique-bg: rgba(255, 59, 92, 0.08);
+    --critique-border: rgba(255, 59, 92, 0.25);
+    --important: #ff8c38;
+    --important-bg: rgba(255, 140, 56, 0.08);
+    --important-border: rgba(255, 140, 56, 0.25);
+    --moyen: #e8c840;
+    --moyen-bg: rgba(232, 200, 64, 0.08);
+    --moyen-border: rgba(232, 200, 64, 0.25);
+    --mineur: #6878a0;
+    --mineur-bg: rgba(104, 120, 160, 0.08);
+    --mineur-border: rgba(104, 120, 160, 0.25);
+    --accent: #7c6aff;
+    --accent-glow: rgba(124, 106, 255, 0.15);
+    --green: #00d68f;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-body: 'DM Sans', -apple-system, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Ambient glow */
+  .ambient-glow {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(150px);
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-1 { top: -200px; left: -100px; background: var(--critique); }
+  .glow-2 { bottom: -200px; right: -100px; background: var(--accent); }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 0 24px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .sidebar-logo h2 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .sidebar-logo span {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+
+  .nav-section {
+    padding: 0 16px;
+    margin-bottom: 20px;
+  }
+
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    padding: 0 8px;
+    margin-bottom: 8px;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 400;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .nav-link:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  .nav-link .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .nav-link .count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .sidebar-footer p {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    line-height: 1.8;
+  }
+
+  /* Main content */
+  .main {
+    padding: 48px 56px 80px;
+    max-width: 960px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+    animation: fadeSlideIn 0.6s ease-out;
+  }
+
+  .header-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .header h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .header-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 600px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: fadeSlideIn 0.6s ease-out 0.1s both;
+  }
+
+  .stat-cell {
+    background: var(--bg-card);
+    padding: 20px 16px;
+    text-align: center;
+    transition: background 0.2s;
+  }
+
+  .stat-cell:hover { background: var(--bg-card-hover); }
+
+  .stat-number {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  /* Severity bar */
+  .severity-bar-container {
+    margin-bottom: 48px;
+    animation: fadeSlideIn 0.6s ease-out 0.2s both;
+  }
+
+  .severity-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+
+  .severity-bar div {
+    transition: width 1s ease-out;
+  }
+
+  .severity-bar .seg-critique { background: var(--critique); }
+  .severity-bar .seg-important { background: var(--important); }
+  .severity-bar .seg-moyen { background: var(--moyen); }
+  .severity-bar .seg-mineur { background: var(--mineur); }
+
+  .severity-legend {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  .badge-critique { background: var(--critique-bg); color: var(--critique); border: 1px solid var(--critique-border); }
+  .badge-important { background: var(--important-bg); color: var(--important); border: 1px solid var(--important-border); }
+  .badge-moyen { background: var(--moyen-bg); color: var(--moyen); border: 1px solid var(--moyen-border); }
+  .badge-mineur { background: var(--mineur-bg); color: var(--mineur); border: 1px solid var(--mineur-border); }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .section-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Issue cards */
+  .issue-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 12px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .issue-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+  }
+
+  .issue-card.critique::before { background: var(--critique); }
+  .issue-card.important::before { background: var(--important); }
+  .issue-card.moyen::before { background: var(--moyen); }
+  .issue-card.mineur::before { background: var(--mineur); }
+
+  .issue-card:hover {
+    background: var(--bg-card-hover);
+    border-color: #2a2a4a;
+    transform: translateX(2px);
+  }
+
+  .issue-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .issue-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .issue-card.critique .issue-number { background: var(--critique-bg); color: var(--critique); border: 1px solid var(--critique-border); }
+  .issue-card.important .issue-number { background: var(--important-bg); color: var(--important); border: 1px solid var(--important-border); }
+  .issue-card.moyen .issue-number { background: var(--moyen-bg); color: var(--moyen); border: 1px solid var(--moyen-border); }
+  .issue-card.mineur .issue-number { background: var(--mineur-bg); color: var(--mineur); border: 1px solid var(--mineur-border); }
+
+  .issue-title-block {
+    flex: 1;
+  }
+
+  .issue-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .issue-file {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(124, 106, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .issue-desc {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 14px;
+    padding-left: 42px;
+  }
+
+  .issue-reco {
+    padding-left: 42px;
+  }
+
+  .reco-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(124, 106, 255, 0.15);
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--text-primary);
+    line-height: 1.55;
+  }
+
+  .reco-box .reco-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  /* Code */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: rgba(124, 106, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #c0b8ff;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: fadeSlideIn 0.6s ease-out 0.5s both;
+  }
+
+  .footer-left {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .footer-right {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .footer-right .pulse {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  /* Animations */
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .section { animation: fadeSlideIn 0.6s ease-out both; }
+  #section-critique { animation-delay: 0.2s; }
+  #section-important { animation-delay: 0.3s; }
+  #section-moyen { animation-delay: 0.4s; }
+  #section-mineur { animation-delay: 0.5s; }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #1a1a1a; }
+    body::before { display: none; }
+    .ambient-glow { display: none; }
+    .sidebar { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .main { padding: 24px; max-width: 100%; }
+    .issue-card { break-inside: avoid; border: 1px solid #ccc; background: #fafafa; }
+    .issue-card:hover { transform: none; }
+    .stats-bar { border: 1px solid #ccc; }
+    .stat-cell { background: #f5f5f5; }
+    .stat-number, .issue-title, .section-title { color: #1a1a1a; }
+    .issue-desc, .stat-label, .reco-box { color: #444; }
+    .reco-box { background: #f0f0ff; border-color: #ccc; }
+    code { background: #eee; color: #333; }
+    .severity-bar { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .section-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .issue-number { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .issue-card::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .main { padding: 24px 20px 60px; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .header h1 { font-size: 26px; }
+    .issue-desc, .issue-reco { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ambient-glow glow-1"></div>
+<div class="ambient-glow glow-2"></div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h2>审计</h2>
+      <span>Polymarket RBI Bot</span>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">严重程度</div>
+      <a href="#section-critique" class="nav-link">
+        <span class="dot" style="background:var(--critique)"></span>
+        严重
+        <span class="count">3</span>
+      </a>
+      <a href="#section-important" class="nav-link">
+        <span class="dot" style="background:var(--important)"></span>
+        重要
+        <span class="count">4</span>
+      </a>
+      <a href="#section-moyen" class="nav-link">
+        <span class="dot" style="background:var(--moyen)"></span>
+        中等
+        <span class="count">5</span>
+      </a>
+      <a href="#section-mineur" class="nav-link">
+        <span class="dot" style="background:var(--mineur)"></span>
+        轻微
+        <span class="count">3</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">导航</div>
+      <a href="#top" class="nav-link">
+        <span class="dot" style="background:var(--accent)"></span>
+        总览
+      </a>
+      <a href="index.html" class="nav-link">
+        <span class="dot" style="background:var(--green)"></span>
+        仪表板
+      </a>
+      <a href="docs_zh.html" class="nav-link">
+        <span class="dot" style="background:var(--text-muted)"></span>
+        文档
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <p>生成于 2026/03/26<br>Claude Code &middot; Opus 4.6</p>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main" id="top">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-eyebrow">代码审计报告</div>
+      <h1>Polymarket RBI Bot</h1>
+      <p class="header-subtitle">深入分析代码库：架构、可靠性、安全性和质量。共发现 15 个问题，按严重程度分类。</p>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-cell">
+        <div class="stat-number" style="color:var(--text-primary)">15</div>
+        <div class="stat-label">总计</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-number" style="color:var(--critique)">3</div>
+        <div class="stat-label">严重</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-number" style="color:var(--important)">4</div>
+        <div class="stat-label">重要</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-number" style="color:var(--moyen)">5</div>
+        <div class="stat-label">中等</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-number" style="color:var(--mineur)">3</div>
+        <div class="stat-label">轻微</div>
+      </div>
+    </div>
+
+    <!-- Severity bar -->
+    <div class="severity-bar-container">
+      <div class="severity-bar">
+        <div class="seg-critique" style="width:20%"></div>
+        <div class="seg-important" style="width:26.7%"></div>
+        <div class="seg-moyen" style="width:33.3%"></div>
+        <div class="seg-mineur" style="width:20%"></div>
+      </div>
+      <div class="severity-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--critique)"></span> 严重 &mdash; 阻止实盘交易</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--important)"></span> 重要 &mdash; 可靠性受损</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--moyen)"></span> 中等 &mdash; 设计和健壮性</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--mineur)"></span> 轻微 &mdash; 代码质量</span>
+      </div>
+    </div>
+
+    <!-- ==================== 严重 ==================== -->
+    <section class="section" id="section-critique">
+      <div class="section-header">
+        <span class="section-badge badge-critique">严重</span>
+        <span class="section-title">阻止实盘交易</span>
+        <span class="section-count">3 个问题</span>
+      </div>
+
+      <div class="issue-card critique">
+        <div class="issue-top">
+          <span class="issue-number">1</span>
+          <div class="issue-title-block">
+            <div class="issue-title">Bot 管理器 = 随机模拟器</div>
+            <span class="issue-file">api/bot_manager.py:144-168</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>_run()</code> 循环使用 <code>random.random()</code> 生成随机交易。<code>Trader</code> 被实例化但<strong>从未使用</strong>。实盘模式下不会执行任何真实交易 — 仪表板显示的是虚假数据。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>在 <code>_run()</code> 循环中接入 <code>Trader.execute_once()</code>，通过 Polymarket API 或 ccxt 获取真实数据。将模拟模式保留为明确的备用方案。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card critique">
+        <div class="issue-top">
+          <span class="issue-number">2</span>
+          <div class="issue-title-block">
+            <div class="issue-title">硬编码的 Token ID</div>
+            <span class="issue-file">api/bot_manager.py:135</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>token_id="placeholder"</code> 被硬编码。没有选择真实 Polymarket 市场的机制。即使 Trader 被接入，也不知道在哪个市场操作。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>在仪表板和 API 中添加市场选择器（<code>POST /api/bots/{key}/start</code> 接受 <code>token_id</code> 参数）。通过 Polymarket API 提供活跃市场列表。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card critique">
+        <div class="issue-top">
+          <span class="issue-number">3</span>
+          <div class="issue-title-block">
+            <div class="issue-title">无实时数据</div>
+            <span class="issue-file">bot/trader.py:106-122</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>run_loop()</code> 遍历传入的静态 DataFrame。没有实时数据获取 — 循环逐行重放历史数据而不是消费实时数据流。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>在 <code>run_loop()</code> 中实现周期性获取：每次迭代调用 <code>downloader.fetch_ohlcv()</code> 或 <code>polymarket_client.get_price()</code>，配合 <code>time.sleep(interval)</code>。以增量方式构建 DataFrame。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 重要 ==================== -->
+    <section class="section" id="section-important">
+      <div class="section-header">
+        <span class="section-badge badge-important">重要</span>
+        <span class="section-title">可靠性受损</span>
+        <span class="section-count">4 个问题</span>
+      </div>
+
+      <div class="issue-card important">
+        <div class="issue-top">
+          <span class="issue-number">4</span>
+          <div class="issue-title-block">
+            <div class="issue-title">PnL 计算语义模糊</div>
+            <span class="issue-file">bot/position_tracker.py:52-55</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>pnl = (exit - entry) / entry * size</code> &mdash; <code>size</code> 是美元金额，所以结果是百分比乘以一个金额。数学上正确，但语义混乱：PnL 纯粹因为巧合才是美元。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>明确为 <code>pnl = (exit - entry) * quantity</code> 或 <code>quantity = size / entry</code>（数量是单位数）。添加注释说明结果单位。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card important">
+        <div class="issue-top">
+          <span class="issue-number">5</span>
+          <div class="issue-title-block">
+            <div class="issue-title">每次交易都调用 init_db()</div>
+            <span class="issue-file">data/storage.py:66-67</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          每次调用 <code>log_trade()</code> 都会执行 <code>init_db()</code>，创建新的 SQLite 连接并重新执行 <code>CREATE TABLE IF NOT EXISTS</code>。没有连接池 — 高频交易时存在 <code>database is locked</code> 风险。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>在启动时只初始化一次数据库。使用 <code>threading.Lock</code> 的单例连接或改用 <code>sqlite3.connect(check_same_thread=False)</code> 配合连接池。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card important">
+        <div class="issue-top">
+          <span class="issue-number">6</span>
+          <div class="issue-title-block">
+            <div class="issue-title">PUT /api/settings 无验证</div>
+            <span class="issue-file">api/server.py:114-117</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          该端点接受任意值：<code>position_size: -999</code>、<code>stop_loss_pct: 500</code>。Pydantic 模型 <code>SettingsUpdate</code> 定义了类型但没有边界。恶意调用或 UI 错误可能破坏风险管理器。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>添加 Pydantic 验证器：<code>position_size</code> 用 <code>Field(ge=0.01, le=1000)</code>，百分比用 <code>Field(ge=0.1, le=50)</code>。超范围返回 422。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card important">
+        <div class="issue-top">
+          <span class="issue-number">7</span>
+          <div class="issue-title-block">
+            <div class="issue-title">全局 DRY_RUN 突变</div>
+            <span class="issue-file">api/bot_manager.py:259</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>settings.DRY_RUN = self._settings["dry_run"]</code> 从线程修改模块级全局变量。所有机器人线程共享此状态而无同步 — 如果机器人正在执行，则存在竞态条件。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>将 <code>dry_run</code> 作为实例参数传递给 <code>Trader</code> 和 <code>PolymarketClient</code>。删除全局变更。每个机器人读取自己的配置。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 中等 ==================== -->
+    <section class="section" id="section-moyen">
+      <div class="section-header">
+        <span class="section-badge badge-moyen">中等</span>
+        <span class="section-title">设计和健壮性</span>
+        <span class="section-count">5 个问题</span>
+      </div>
+
+      <div class="issue-card moyen">
+        <div class="issue-top">
+          <span class="issue-number">8</span>
+          <div class="issue-title-block">
+            <div class="issue-title">CORS 完全开放</div>
+            <span class="issue-file">api/server.py:20-25</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>allow_origins=["*"]</code> 允许任何网站调用 API。在生产环境中，内存中有 Polygon 私钥，恶意网站可能通过用户浏览器触发交易。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>限制为 <code>allow_origins=["http://localhost:1818"]</code> 或通过 <code>.env</code> 设为可配置。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card moyen">
+        <div class="issue-top">
+          <span class="issue-number">9</span>
+          <div class="issue-title-block">
+            <div class="issue-title">Scaler 无下降机制</div>
+            <span class="issue-file">incubation/scaler.py</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          递进比例从 $1 上升到 $100（满足条件时），但<strong>永远不会下降</strong>。如果升级后表现恶化，机器人继续以大仓位交易。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>添加 <code>_evaluate_level_down()</code>：如果胜率跌破 45% 或利润系数跌破 0.8，则下降一级。保护资本。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card moyen">
+        <div class="issue-top">
+          <span class="issue-number">10</span>
+          <div class="issue-title-block">
+            <div class="issue-title">仅在收盘价上检查止损</div>
+            <span class="issue-file">backtesting/engine.py:48-83</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          回测引擎在蜡烛的 <code>close</code> 上检查止损，而非 <code>low</code>（BUY）或 <code>high</code>（SELL）。实际上止损会在蜡烛内触发 — 回测因此过于乐观。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>在 BUY 仓位的 <code>curr["low"]</code> 和 SELL 仓位的 <code>curr["high"]</code> 上检查止损。用止损价格而非收盘价作为出场价格。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card moyen">
+        <div class="issue-top">
+          <span class="issue-number">11</span>
+          <div class="issue-title-block">
+            <div class="issue-title">CVD = 启发式近似</div>
+            <span class="issue-file">strategies/cvd_strategy.py:24-28</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          成交量 Delta 由 <code>volume * (close - open) / (high - low)</code> 近似。在没有 tick 级数据的情况下这是合理的启发式，但信号置信度应反映这种不确定性。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>对置信度应用折扣系数（如 <code>confidence *= 0.7</code>）以补偿近似误差。在策略中记录该限制。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card moyen">
+        <div class="issue-top">
+          <span class="issue-number">12</span>
+          <div class="issue-title-block">
+            <div class="issue-title">夏普比率年化错误</div>
+            <span class="issue-file">api/bot_manager.py:215</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>arr.mean() / arr.std() * (252 ** 0.5)</code> 使用 252（交易日）作为年化因子。但模拟中每 2-4 秒就有一笔交易 — 年化不一致，夏普比率被高估。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>根据实际交易频率计算，使用 <code>sqrt(N)</code> 其中 N 是每年的周期数。或显示非年化夏普并标注"每笔交易"。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 轻微 ==================== -->
+    <section class="section" id="section-mineur">
+      <div class="section-header">
+        <span class="section-badge badge-mineur">轻微</span>
+        <span class="section-title">代码质量</span>
+        <span class="section-count">3 个问题</span>
+      </div>
+
+      <div class="issue-card mineur">
+        <div class="issue-top">
+          <span class="issue-number">13</span>
+          <div class="issue-title-block">
+            <div class="issue-title">无集成测试</div>
+            <span class="issue-file">tests/</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          单元测试隔离覆盖了策略、回测和风险管理器。但没有针对 FastAPI 路由、<code>BotManager</code> 线程或完整流程 signal &rarr; risk &rarr; order &rarr; position 的测试。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>使用 FastAPI 的 <code>TestClient</code> 添加端点测试。使用 DRY_RUN 模式下模拟的 <code>PolymarketClient</code> 测试完整流程。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card mineur">
+        <div class="issue-top">
+          <span class="issue-number">14</span>
+          <div class="issue-title-block">
+            <div class="issue-title">函数内延迟导入</div>
+            <span class="issue-file">api/bot_manager.py:146, 213</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          <code>import random</code> 和 <code>import numpy</code> 在频繁调用的函数体内导入。开销可以忽略（Python 缓存模块），但这是降低可读性的坏习惯。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>将导入移到文件顶部，与其他模块导入放在一起。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="issue-card mineur">
+        <div class="issue-top">
+          <span class="issue-number">15</span>
+          <div class="issue-title-block">
+            <div class="issue-title">无优雅关闭</div>
+            <span class="issue-file">api/bot_manager.py</span>
+          </div>
+        </div>
+        <div class="issue-desc">
+          服务器停止时（Ctrl+C），守护线程无清理即终止。未保存未平仓仓位，未在 Polymarket 上取消挂单。
+        </div>
+        <div class="issue-reco">
+          <div class="reco-box">
+            <span class="reco-icon">&rarr;</span>
+            <span>拦截 <code>SIGINT</code>/<code>SIGTERM</code> 以调用 <code>kill_all()</code> + 将状态保存到 SQLite。使用 FastAPI 的 <code>shutdown</code> 事件。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">Polymarket RBI Bot &middot; 代码审计 v1.0</div>
+      <div class="footer-right">
+        <span class="pulse"></span>
+        生成于 2026 年 3 月 26 日 &middot; Claude Code
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
